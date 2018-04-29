@@ -1,0 +1,7 @@
+
+exit
+
+This repo contains Dockerfiles for various scientific appliances and useful but heavily-dependent software that are
+inconvenient to keep in a rolling system. 
+
+
