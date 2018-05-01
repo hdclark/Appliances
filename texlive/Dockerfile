@@ -28,6 +28,18 @@ RUN apt-get --yes update && \
       sshfs \
       openssh-server \
       man-db \
+      cmake \
+      `# ` \
+      `# Image conversion support tooling ` \
+      poppler-utils \
+      poppler-data \
+      libpoppler-cpp-dev \
+      libpoppler-dev \
+      libpoppler-cil \
+      libpoppler-cil-dev \
+      imagemagick \
+      ghostscript \
+      ghostscript-doc \
       `# ` \
       `# TeXlive stuff. ` \
       texlive-latex-base \
@@ -36,6 +48,8 @@ RUN apt-get --yes update && \
       texlive-latex-extra-doc \
       texlive-latex-recommended \
       texlive-latex-recommended-doc \
+      `# ` \
+      `# Misc TeX-related tooling. ` \
       texify \
       texvc \
       tralics \
@@ -58,9 +72,6 @@ RUN apt-get --yes update && \
       latex2rtf-doc \
       latexdiff \
       latexml
-
-
-
 
 
 WORKDIR /scratch
