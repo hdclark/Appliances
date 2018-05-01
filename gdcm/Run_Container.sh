@@ -14,6 +14,7 @@ sudo docker run \
     --rm \
     -v "${artifacts_dir}":/artifacts/:rw \
     "${image_basename}":latest \
+    $@
 
 #    -p 8080:80 \
 #    --entrypoint /bin/bash \
