@@ -1,6 +1,6 @@
 
-#FROM debian:stable
-FROM debian:testing
+FROM debian:stable
+#FROM debian:testing
 #FROM debian:unstable
 
 LABEL maintainer="http://www.halclark.ca" \
@@ -35,7 +35,6 @@ RUN apt-get --yes update && \
       vim-syntastic \
       vim-youcompleteme \
       clang \
-      clang-doc \
       clang-format \
       clang-tidy \
       bear \
