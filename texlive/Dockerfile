@@ -29,6 +29,7 @@ RUN apt-get --yes update && \
       openssh-server \
       man-db \
       cmake \
+      screen \
       `# ` \
       `# Image conversion support tooling ` \
       poppler-utils \
@@ -50,6 +51,7 @@ RUN apt-get --yes update && \
       texlive-latex-recommended-doc \
       `# ` \
       `# Misc TeX-related tooling. ` \
+      vim-latexsuite \
       texify \
       texvc \
       tralics \
