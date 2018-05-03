@@ -24,8 +24,18 @@ RUN apt-get --yes update && \
       openssh-server \
       man-db \
       screen \
+      `# ` \
+      `# Building utilities. ` \
       build-essential \
+      g++ \
       gdb \
+      clang \
+      clang-format \
+      clang-tidy \
+      bear \
+      afl-clang \
+      valgrind \
+      libtsan0 \
       `# ` \
       `# Vim binaries and misc. ` \
       vim \
@@ -33,17 +43,13 @@ RUN apt-get --yes update && \
       vim-fugitive \
       vim-pathogen \
       vim-syntastic \
-      vim-youcompleteme \
-      clang \
-      clang-format \
-      clang-tidy \
-      bear \
-      afl-clang
+      vim-youcompleteme
 
 # TODO:
 # - add https://github.com/JBakamovic/yavide/blob/master/docs/INSTALL.md
 # - add clangd when available.
 # - add rtags (? emacs-only ?).
+# - add cquery (github: cquery-project/cquery).
 
 
 
