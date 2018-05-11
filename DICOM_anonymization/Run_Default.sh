@@ -22,8 +22,24 @@
 #export DISPLAY=:1
 
 # Run a service or perform an operation.
-#find /artifacts/ -type f -execdir gdcm '{}' \;
+printf '\n'
+printf '=====================\n'
+printf 'gdcmanon version\n'
+printf '=====================\n'
 gdcmanon --version
+
+printf '\n'
+printf '=====================\n'
+printf 'gdcmanon version\n'
+printf '=====================\n'
+dcmdump --version 
+
+printf '\n'
+printf 'To anonymize you must invoke one of:\n'
+printf '  /resources/Run_anonymize.sh\n'
+printf 'or\n'
+printf '  /resources/Run_anonymize_partial.sh\n'
+printf 'The top-level directories mapped to /artifacts/ will each be anonymized.\n'
 
 ## Clean up, if necessary (usually not).
 #kill $xpid

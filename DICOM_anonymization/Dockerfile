@@ -15,6 +15,8 @@ EXPOSE 22/tcp \
 
 WORKDIR /resources
 ADD . /resources
+ADD ./scripts/anonymize /usr/bin
+ADD ./scripts/anonymize_partial /usr/bin
 
 ENV DEBIAN_FRONTEND noninteractive
 

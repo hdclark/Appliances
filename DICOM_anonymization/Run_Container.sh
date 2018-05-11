@@ -16,6 +16,9 @@ sudo docker run \
     "${image_basename}":latest \
     $@
 
+#   /resources/Run_anonymize.sh
+#   /resources/Run_anonymize_partial.sh
+
 #    -p 8080:80 \
 #    --entrypoint /bin/bash \
 

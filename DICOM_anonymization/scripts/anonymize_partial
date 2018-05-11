@@ -1,0 +1,491 @@
+#!/bin/bash
+
+# This script partially anonymizes a directory of DICOM files.
+# It anonymizes the core tags, but will be easily identified in most cases.
+# For example, private tags are retained.
+# All files in the directory are assumed to comprise a logical set.
+# All output files are assigned uniform series and study information.
+#
+# Note: The input must be in a directory at the top-level.
+#
+# Note: This program is interactive!
+#
+# Note: This program is ad-hoc and does not fully conform to the DICOM standard.
+#       Use at your own risk.
+#
+
+thedir="$@"
+if [ ! -d "$thedir" ] ; then
+    printf 'Cannot access provided directory. Refusing to continue.\n' 1>&2
+    exit 1
+fi
+anondir="${thedir%/}_anon"
+mkdir -p "${anondir}"/ 
+printf -- "Anonymizing '${thedir}' to '$anondir' ...\n"
+
+
+# A simple routine to generate toy UIDs.
+genericUID() {
+    printf "1.2.$RANDOM.$RANDOM.$RANDOM.$RANDOM"
+}
+export -f genericUID
+
+
+# Perform a basic anonymization. Note that this is not really sufficient for most purposes.
+#
+# Note: This pass is necessary to re-issue synchronized StudyInstanceUIDs and SeriesInstanceUIDs.
+#       For some reason DCMtk does not synchronize them.
+printf 'Performing basic anonymization to re-write StudyInstanceUIDs and SeriesInstanceUIDs.\n'
+printf ' This could take a while because all files are copied...\n'
+apasswd=$( openssl rand -base64 128 | head -c 64 )
+gdcmanon -r --continue -p "${apasswd}" -V -i "${thedir}" -o "${anondir}"/
+# OR, you can fallback (without any anonymization) to:
+#rsync -avP "${thedir}/" "${anondir}/"
+
+# More precisely remove tags (according to the DICOM supplement concerning anonymizing files; see below).
+todaysdate=$( date +%Y%m%d )
+todaystime=$( date +%H%M%S )
+todaysdatetime="${todaysdate}-${todaystime}"
+
+tagstoerase=()
+tagstoerase+=("(0000,1000)") #     Affected SOP Instance UID                                            
+tagstoerase+=("(0008,0024)") #     Overlay Date                                                         
+tagstoerase+=("(0008,0025)") #     Curve Date                                                           
+tagstoerase+=("(0008,0034)") #     Overlay Time                                                         
+tagstoerase+=("(0008,0035)") #     Curve Time                                                           
+tagstoerase+=("(0008,0081)") #     Institution Address                                                  
+tagstoerase+=("(0008,0092)") #     Referring Physician's Address                                        
+tagstoerase+=("(0008,0094)") #     Referring Physician's Telephone Numbers                              
+tagstoerase+=("(0008,0096)") #     Referring Physician's Identification Sequence                        
+#tagstoerase+=("(0008,0201)") #     Timezone Offset From UTC
+#tagstoerase+=("(0008,1030)") #     Study Description                                                    
+#tagstoerase+=("(0008,103E)") #     Series Description                                              
+#tagstoerase+=("(0008,1040)") #     Institutional Department Name                                        
+tagstoerase+=("(0008,1048)") #     Physician(s) of Record                                               
+tagstoerase+=("(0008,1049)") #     Physician(s) of Record Identification Sequence                       
+tagstoerase+=("(0008,1050)") #     Performing Physicians' Name                                          
+tagstoerase+=("(0008,1052)") #     Performing Physician Identification Sequence                         
+tagstoerase+=("(0008,1060)") #     Name of Physician(s) Reading Study                                   
+tagstoerase+=("(0008,1062)") #     Physician(s) Reading Study Identification Sequence                   
+tagstoerase+=("(0008,1080)") #     Admitting Diagnoses Description                                      
+tagstoerase+=("(0008,1084)") #     Admitting Diagnoses Code Sequence                                    
+tagstoerase+=("(0008,1120)") #     Referenced Patient Sequence                                          
+tagstoerase+=("(0008,2111)") #     Derivation Description                                               
+tagstoerase+=("(0008,4000)") #     Identifying Comments                                                 
+tagstoerase+=("(0010,0021)") #     Issuer of Patient ID                                                 
+tagstoerase+=("(0010,0032)") #     Patient's Birth Time                                                 
+tagstoerase+=("(0010,0050)") #     Patient's Insurance Plan Code Sequence                               
+tagstoerase+=("(0010,0101)") #     Patient's Primary Language Code Sequence                             
+tagstoerase+=("(0010,0102)") #     Patient's Primary Language Modifier Code Sequence                    
+tagstoerase+=("(0010,1000)") #     Other Patient IDs                                                    
+tagstoerase+=("(0010,1001)") #     Other Patient Names                                                  
+tagstoerase+=("(0010,1002)") #     Other Patient IDs Sequence                                           
+tagstoerase+=("(0010,1005)") #     Patient's Birth Name                                                 
+tagstoerase+=("(0010,1010)") #     Patient's Age                                                        
+tagstoerase+=("(0010,1020)") #     Patient's Size                                                       
+tagstoerase+=("(0010,1030)") #     Patient's Weight                                                     
+tagstoerase+=("(0010,1040)") #     Patient Address                                                      
+tagstoerase+=("(0010,1050)") #     Insurance Plan Identification                                        
+tagstoerase+=("(0010,1060)") #     Patient's Mother's Birth Name                                        
+tagstoerase+=("(0010,1080)") #     Military Rank                                                        
+tagstoerase+=("(0010,1081)") #     Branch of Service                                                    
+tagstoerase+=("(0010,1090)") #     Medical Record Locator                                               
+tagstoerase+=("(0010,2000)") #     Medical Alerts                                                       
+tagstoerase+=("(0010,2110)") #     Allergies                                                            
+tagstoerase+=("(0010,2150)") #     Country of Residence                                                 
+tagstoerase+=("(0010,2152)") #     Region of Residence                                                  
+tagstoerase+=("(0010,2154)") #     Patient's Telephone Numbers                                          
+tagstoerase+=("(0010,2160)") #     Ethnic Group                                                         
+tagstoerase+=("(0010,2180)") #     Occupation                                                           
+tagstoerase+=("(0010,21A0)") #     Smoking Status                                                       
+tagstoerase+=("(0010,21B0)") #     Additional Patient's History                                         
+tagstoerase+=("(0010,21C0)") #     Pregnancy Status                                                     
+tagstoerase+=("(0010,21D0)") #     Last Menstrual Date                                                  
+tagstoerase+=("(0010,21F0)") #     Patient's Religious Preference                                       
+tagstoerase+=("(0010,2297)") #     Responsible Person                                                   
+tagstoerase+=("(0010,2299)") #     Responsible Organization                                             
+tagstoerase+=("(0010,4000)") #     Patient Comments                                                     
+tagstoerase+=("(0018,1004)") #     Plate ID                                                             
+tagstoerase+=("(0018,1005)") #     Generator ID                                                         
+tagstoerase+=("(0018,1007)") #     Cassette ID                                                          
+tagstoerase+=("(0018,1008)") #     Gantry ID                                                            
+#tagstoerase+=("(0018,4000)") #     Acquisition Comments                                                 
+#tagstoerase+=("(0018,9424)") #     Acquisition Protocol Description                                     
+#tagstoerase+=("(0018,A003)") #     Contribution Description                                             
+#tagstoerase+=("(0020,3401)") #     Modifying Device ID                                                  
+#tagstoerase+=("(0020,3404)") #     Modifying Device Manufacturer                                        
+#tagstoerase+=("(0020,3406)") #     Modified Image Description                                           
+#tagstoerase+=("(0020,4000)") #     Image Comments                                                       
+#tagstoerase+=("(0020,9158)") #     Frame Comments                                                       
+#tagstoerase+=("(0028,4000)") #     Image Presentation Comments                                          
+tagstoerase+=("(0032,0012)") #     Study ID Issuer                                                      
+tagstoerase+=("(0032,1020)") #     Scheduled Study Location                                             
+tagstoerase+=("(0032,1021)") #     Scheduled Study Location AE Title                                    
+#tagstoerase+=("(0032,1030)") #     Reason for Study                                                     
+tagstoerase+=("(0032,1032)") #     Requesting Physician                                                 
+tagstoerase+=("(0032,1033)") #     Requesting Service                                                   
+#tagstoerase+=("(0032,1070)") #     Requested Contrast Agent                                             
+#tagstoerase+=("(0032,4000)") #     Study Comments                                                       
+#tagstoerase+=("(0038,0004)") #     Referenced Patient Alias Sequence                                    
+tagstoerase+=("(0038,0010)") #     Admission ID                                                         
+tagstoerase+=("(0038,0011)") #     Issuer of Admission ID                                               
+tagstoerase+=("(0038,001E)") #     Scheduled Patient Institution Residence                              
+tagstoerase+=("(0038,0020)") #     Admitting Date                                                       
+tagstoerase+=("(0038,0021)") #     Admitting Time                                                       
+tagstoerase+=("(0038,0040)") #     Discharge Diagnosis Description                                      
+#tagstoerase+=("(0038,0050)") #     Special Needs                                                        
+tagstoerase+=("(0038,0060)") #     Service Episode ID                                                   
+tagstoerase+=("(0038,0061)") #     Issuer of Service Episode ID                                         
+tagstoerase+=("(0038,0062)") #     Service Episode Description                                          
+tagstoerase+=("(0038,0300)") #     Current Patient Location                                             
+tagstoerase+=("(0038,0400)") #     Patient's Institution Residence                                      
+tagstoerase+=("(0038,0500)") #     Patient State                                                        
+#tagstoerase+=("(0038,4000)") #     Visit Comments                                                       
+#tagstoerase+=("(0040,0001)") #     Scheduled Station AE Title                                           
+#tagstoerase+=("(0040,0002)") #     Scheduled Procedure Step Start Date                                  
+#tagstoerase+=("(0040,0003)") #     Scheduled Procedure Step Start Time                                  
+#tagstoerase+=("(0040,0004)") #     Scheduled Procedure Step End Date                                    
+#tagstoerase+=("(0040,0005)") #     Scheduled Procedure Step End Time                                    
+#tagstoerase+=("(0040,0006)") #     Scheduled Performing Physician Name                                  
+#tagstoerase+=("(0040,0007)") #     Scheduled Procedure Step Description                                 
+tagstoerase+=("(0040,000B)") #     Scheduled Performing Physician Identification Sequence               
+#tagstoerase+=("(0040,0010)") #     Scheduled Station Name                                               
+#tagstoerase+=("(0040,0011)") #     Scheduled Procedure Step Location                                    
+tagstoerase+=("(0040,0012)") #     Pre-Medication                                                       
+#tagstoerase+=("(0040,0241)") #     Performed Station AE Title                                           
+#tagstoerase+=("(0040,0242)") #     Performed Station Name                                               
+tagstoerase+=("(0040,0243)") #     Performed Location                                                   
+#tagstoerase+=("(0040,0244)") #     Performed Procedure Step Start Date                                  
+#tagstoerase+=("(0040,0245)") #     Performed Procedure Step Start Time                                  
+#tagstoerase+=("(0040,0250)") #     Performed Procedure Step End Date                                    
+#tagstoerase+=("(0040,0251)") #     Performed Procedure Step End Time                                    
+#tagstoerase+=("(0040,0253)") #     Performed Procedure Step ID                                          
+#tagstoerase+=("(0040,0254)") #     Performed Procedure Step Description                                 
+#tagstoerase+=("(0040,0275)") #     Request Attributes Sequence                                          
+#tagstoerase+=("(0040,0280)") #     Comments on the Performed Procedure Step                             
+#tagstoerase+=("(0040,0555)") #     Acquisition Context Sequence                                         
+#tagstoerase+=("(0040,1001)") #     Requested Procedure ID                                               
+tagstoerase+=("(0040,1004)") #     Patient Transport Arrangements                                       
+#tagstoerase+=("(0040,1005)") #     Requested Procedure Location                                         
+tagstoerase+=("(0040,1010)") #     Names of Intended Recipient of Results                               
+tagstoerase+=("(0040,1011)") #     Intended Recipients of Results Identification Sequence               
+tagstoerase+=("(0040,1102)") #     Person Address                                                       
+tagstoerase+=("(0040,1103)") #     Person Telephone Numbers                                             
+tagstoerase+=("(0040,1400)") #     Requested Procedure Comments                                         
+tagstoerase+=("(0040,2001)") #     Reason for the Imaging Service Request                               
+tagstoerase+=("(0040,2008)") #     Order Entered By                                                     
+tagstoerase+=("(0040,2009)") #     Order Enterer Location                                               
+tagstoerase+=("(0040,2010)") #     Order Callback Phone Number                                          
+#tagstoerase+=("(0040,2400)") #     Imaging Service Request Comments                                     
+#tagstoerase+=("(0040,3001)") #     Confidentiality Constraint on Patient Data Description               
+tagstoerase+=("(0040,4025)") #     Scheduled Station Name Code Sequence                                 
+tagstoerase+=("(0040,4027)") #     Scheduled Station Geographic Location Code Sequence                  
+tagstoerase+=("(0040,4028)") #     Performed Station Name Code Sequence                                 
+tagstoerase+=("(0040,4030)") #     Performed Station Geographic Location Code Sequence                  
+tagstoerase+=("(0040,4034)") #     Scheduled Human Performers Sequence                                  
+tagstoerase+=("(0040,4035)") #     Actual Human Performers Sequence                                     
+tagstoerase+=("(0040,4036)") #     Human Performers Organization                                        
+tagstoerase+=("(0040,4037)") #     Human Performers Name                                                
+tagstoerase+=("(0040,A027)") #     Verifying Organization                                               
+tagstoerase+=("(0040,A078)") #     Author Observer Sequence                                             
+tagstoerase+=("(0040,A07A)") #     Participant Sequence                                                 
+tagstoerase+=("(0040,A07C)") #     Custodial Organization Sequence                                      
+tagstoerase+=("(0040,A730)") #     Content Sequence                                                     
+tagstoerase+=("(0070,0086)") #     Content Creator's Identification Code Sequence                       
+tagstoerase+=("(0088,0200)") #     Icon Image Sequence(see Note 12)                                     
+#tagstoerase+=("(0088,0904)") #     Topic Title                                                          
+#tagstoerase+=("(0088,0906)") #     Topic Subject                                                        
+tagstoerase+=("(0088,0910)") #     Topic Author                                                         
+#tagstoerase+=("(0088,0912)") #     Topic Keywords                                                       
+tagstoerase+=("(0400,0100)") #     Digital Signature UID                                                
+tagstoerase+=("(0400,0402)") #     Referenced Digital Signature Sequence                                
+tagstoerase+=("(0400,0403)") #     Referenced SOP Instance MAC Sequence                                 
+tagstoerase+=("(0400,0404)") #     MAC                                                                  
+tagstoerase+=("(0400,0550)") #     Modified Attributes Sequence                                         
+tagstoerase+=("(0400,0561)") #     Original Attributes Sequence                                         
+#tagstoerase+=("(2030,0020)") #     Text String                                                          
+#tagstoerase+=("(4000,0010)") #     Arbitrary                                                            
+tagstoerase+=("(4000,4000)") #     Text Comments                                                        
+#tagstoerase+=("(4008,0042)") #     Results ID Issuer                                                    
+tagstoerase+=("(4008,0102)") #     Interpretation Recorder                                              
+tagstoerase+=("(4008,010A)") #     Interpretation Transcriber                                           
+tagstoerase+=("(4008,010B)") #     Interpretation Text                                                  
+tagstoerase+=("(4008,010C)") #     Interpretation Author                                                
+tagstoerase+=("(4008,0111)") #     Interpretation Approver Sequence                                     
+tagstoerase+=("(4008,0114)") #     Physician Approving Interpretation                                   
+tagstoerase+=("(4008,0115)") #     Interpretation Diagnosis Description                                 
+tagstoerase+=("(4008,0118)") #     Results Distribution List Sequence                                   
+tagstoerase+=("(4008,0119)") #     Distribution Name                                                    
+tagstoerase+=("(4008,011A)") #     Distribution Address                                                 
+tagstoerase+=("(4008,0202)") #     Interpretation ID Issuer                                             
+tagstoerase+=("(4008,0300)") #     Impressions                                                          
+#tagstoerase+=("(4008,4000)") #     Results Comments                                                     
+#tagstoerase+=("(50xx,xxxx)") #     Curve Data                                                           
+tagstoerase+=("(60xx,3000)") #     Overlay Data                                                         
+for i in `seq -w 00 99` ; do 
+    tagstoerase+=("(60"$i",3000)") #     Overlay Data                     
+done
+tagstoerase+=("(60xx,4000)") #     Overlay Comments                                                     
+for i in `seq -w 00 99` ; do 
+    tagstoerase+=("(60"$i",4000)") #     Overlay Comments                  
+done
+tagstoerase+=("(FFFA,FFFA)") #     Digital Signatures Sequence                                          
+tagstoerase+=("(FFFC,FFFC)") #     Data Set Trailing Padding                                            
+
+
+# The following may be required for some DICOM types, but we remove them regardless.
+# This may result in import difficulties depending on the DICOM agent in question.
+tagstoerase+=("(0008,1072)") #     Operators' Identification Sequence                                   
+tagstoerase+=("(0008,0082)") #     Institution Code Sequence                                            
+tagstoerase+=("(0008,1111)") #     Referenced Performed Procedure Step Sequence                         
+tagstoerase+=("(0040,1101)") #     Person Identification Code Sequence                                  
+tagstoerase+=("(0040,A073)") #     Verifying Observer Sequence                                          
+tagstoerase+=("(0070,0001)") #     Graphic Annotation Sequence                                          
+tagstoerase+=("(0008,1110)") #     Referenced Study Sequence                                            
+tagstoerase+=("(0008,1140)") #     Referenced Image Sequence                                            
+tagstoerase+=("(0008,2112)") #     Source Image Sequence                                                
+
+
+# Other tags I've seen in files.
+tagstoerase+=("(0010,0021)") #     IssuerOfPatientID
+tagstoerase+=("(0010,1040)") #     PatientAddress
+
+tagstoerase+=("(0002,0013)") #     ImplementationVersionName
+tagstoerase+=("(0002,0016)") #     SourceApplicationEntityTitle
+tagstoerase+=("(0008,1032)") #     ProcedureCodeSequence
+tagstoerase+=("(0012,0062)") #     PatientIdentityRemoved
+tagstoerase+=("(0012,0063)") #     DeidentificationMethod
+tagstoerase+=("(0040,2017)") #     FillerOrderNumberImagingServiceRequest
+tagstoerase+=("(0400,0500)") #     EncryptedAttributesSequence
+
+
+
+# The following tags are only modified if they are present in the file.
+# The value is modified to some dummy value.
+#
+# Note: Beware -- many DICOM tags are limited to 16 characters. They will be truncated or
+# import will outright fail if long tags are detected. So keep the values as short as possible.
+tagstomodify=()
+
+#tagstomodify+=("(0008,0021)=${todaysdate}") #     Series Date                                                          
+#tagstomodify+=("(0008,002A)=${todaysdatetime}") #     Acquisition DateTime                                                 
+#tagstomodify+=("(0008,0031)=${todaystime}") #     Series Time                                                          
+#tagstomodify+=("(0018,1030)=Anonymous") #     Protocol Name                                                        
+#tagstomodify+=("(0018,1400)=Anonymous") #     Acquisition Device Processing Description                            
+#tagstomodify+=("(0018,700A)=Anonynous") #     Detector ID                                                          
+
+#tagstomodify+=("(0008,0080)=Anonymous") #     Institution Name                                                     
+#tagstomodify+=("(0008,1010)=Anonymous") #     Station Name                                                         
+tagstomodify+=("(0008,1070)=Anonymous") #     Operators' Name                                                      
+tagstomodify+=("(0018,1000)=Anonymous") #     Device Serial Number                                                 
+
+tagstomodify+=("(0040,A075)=Anonymous") #     Verifying Observer Name                                              
+tagstomodify+=("(0040,A123)=Anonymous") #     Person Name
+
+#tagstomodify+=("(0008,0023)=${todaysdate}") #     Content Date                                                         
+#tagstomodify+=("(0008,0033)=${todaystime}") #     Content Time                                                         
+#tagstomodify+=("(0018,0010)=Anonymous") #     Contrast Bolus Agent                                                 
+
+#tagstomodify+=("(0008,0022)=${todaysdate}") #     Acquisition Date                                                     
+#tagstomodify+=("(0008,0032)=${todaystime}") #     Acquisition Time                                                     
+#tagstomodify+=("(0010,2203)=Anonymous") #     Patient Sex Neutered                                                 
+#tagstomodify+=("(0032,1060)=Anonymous") #     Requested Procedure Description                                      
+tagstomodify+=("(300E,0008)=Anonymous") #     Reviewer Name
+
+printf "Patient ID? (e.g., 'anon_1234')\n"
+read -e -i "anon_$RANDOM$RANDOM" PatientID
+tagstomodify+=("(0010,0020)=${PatientID}") #     Patient ID                                                           
+
+printf "Study ID? (e.g., '1234')\n"
+read -e -i "$RANDOM$RANDOM" StudyID
+tagstomodify+=("(0020,0010)=${StudyID}") #     Study ID                                                             
+
+printf "Patient's name? (e.g., 'Anonymous^Anonymous')\n"
+read -e -i "${PatientID}^${PatientID}" PatientsName
+tagstomodify+=("(0010,0010)=${PatientsName}") #     Patient's Name                                                       
+
+printf "Study description? (e.g., 'Research study for X.').\n"
+printf "    Note: No quotes are needed.\n"
+printf "    Note: Leave empty to leave existing tag(s) as-is.\n"
+read StudyDesc
+if [ ! -z "$StudyDesc" ] ; then
+    tagstomodify+=("(0008,1030)=${StudyDesc}") #     Study Description                                                    
+fi
+
+printf "Series description? (e.g., 'Research scan for Y.').\n"
+printf "    Note: No quotes are needed.\n"
+printf "    Note: Leave empty to leave existing tag(s) as-is.\n"
+printf "    Note: Setting this option will cause all (possibly different) descriptions to be overwritten.\n"
+read SeriesDesc
+if [ ! -z "$SeriesDesc" ] ; then
+    tagstomodify+=("(0008,103E)=${SeriesDesc}") #     Series Description                                                    
+fi       
+
+
+#tagstomodify+=("(0008,0020)=${todaysdate}") #     Study Date                                                           
+#tagstomodify+=("(0008,0030)=${todaystime}") #     Study Time                                                           
+tagstomodify+=("(0010,0030)=${todaysdate}") #     Patient's Birth Date                                                 
+tagstomodify+=("(0010,0040)=") #     Patient's Sex                                                        
+#tagstomodify+=("(0008,0050)=") #     Accession Number                                                     
+tagstomodify+=("(0008,0090)=Anonymous") #     Referring Physician's Name                                           
+tagstomodify+=("(0070,0084)=Anonymous") #     Content Creator's Name                                               
+tagstomodify+=("(0040,2016)=") #     Placer Order Number / Imaging Service Request                        
+tagstomodify+=("(0040,2017)=") #     Filler Order Number / Imaging Service Request                        
+tagstomodify+=("(0040,A088)=") #     Verifying Observer Identification Code Sequence                      
+    
+
+
+# UIDs that should be changed in lockstep. 
+#tagstomodify+=("(0020,000D)=$(genericUID)") #     Study Instance UID                                                   
+#tagstomodify+=("(0020,000E)=$(genericUID)") #     Series Instance UID                                                  
+#tagstomodify+=("(0008,0018)=$(genericUID)") #     SOP Instance UID                                                     
+#tagstomodify+=("(0008,1155)=$(genericUID)") #     Referenced SOP Instance UID                                          
+#tagstomodify+=("(0020,0052)=$(genericUID)") #     Frame of Reference UID                                               
+#tagstomodify+=("(3006,0024)=$(genericUID)") #     Referenced Frame of Reference UID                                    
+
+tagstomodify+=("(0020,0200)=$(genericUID)") #     Synchronization Frame of Reference UID                               
+tagstomodify+=("(0008,3010)=$(genericUID)") #     Irradiation Event UID                                                
+tagstomodify+=("(0088,0140)=$(genericUID)") #     Storage Media File-set UID                                           
+tagstomodify+=("(0000,1001)=$(genericUID)") #     Requested SOP Instance UID                                           
+tagstomodify+=("(0004,1511)=$(genericUID)") #     Referenced SOP Instance UID in File                                  
+tagstomodify+=("(0020,9161)=$(genericUID)") #     Concatenation UID                                                    
+tagstomodify+=("(0018,1002)=$(genericUID)") #     Device UID                                                           
+tagstomodify+=("(3006,00C2)=$(genericUID)") #     Related Frame of Reference UID                                       
+tagstomodify+=("(0002,0003)=$(genericUID)") #     Media Storage SOP Instance UID                                       
+tagstomodify+=("(300A,0013)=$(genericUID)") #     Dose Reference UID                                                   
+tagstomodify+=("(0040,4023)=$(genericUID)") #     Referenced General Purpose Scheduled Procedure	Step Transaction UID 
+tagstomodify+=("(0008,9123)=$(genericUID)") #     Creator Version UID                                                  
+tagstomodify+=("(0008,0014)=$(genericUID)") #     Instance Creator UID                                                 
+tagstomodify+=("(0028,1214)=$(genericUID)") #     Large Palette Color Lookup Table UID                                 
+tagstomodify+=("(0040,A124)=$(genericUID)") #     UID                                                                  
+tagstomodify+=("(0020,9164)=$(genericUID)") #     Dimension Organization UID                                           
+tagstomodify+=("(0008,1195)=$(genericUID)") #     Transaction UID                                                      
+tagstomodify+=("(0008,0058)=$(genericUID)") #     Failed SOP Instance UID List                                         
+tagstomodify+=("(0028,1199)=$(genericUID)") #     Palette Color Lookup Table UID                                       
+tagstomodify+=("(0070,031A)=$(genericUID)") #     Fiducial UID                                                         
+tagstomodify+=("(0040,DB0C)=$(genericUID)") #     Template Extension Organization UID                                  
+tagstomodify+=("(0008,010D)=$(genericUID)") #     Context Group Extension Creator UID                                  
+tagstomodify+=("(0040,DB0D)=$(genericUID)") #     Template Extension Creator UID                                       
+
+
+# Other tags I've seen in files.
+#tagstomodify+=("(0008,0012)=${todaysdate}") #     InstanceCreationDate
+#tagstomodify+=("(0008,0013)=${todaystime}") #     InstanceCreationTime
+#tagstomodify+=("(0008,0070)=Anonymous") #     Manufacturer
+#tagstomodify+=("(0008,1090)=Anonymous") #     ManufacturerModelName
+#tagstomodify+=("(0018,1020)=Anonymous") #     SoftwareVersions
+tagstomodify+=("(0032,1032)=Anonymous") #     RequestingPhysician
+tagstomodify+=("(0032,1033)=Anonymous") #     RequestingService
+#tagstomodify+=("(0040,0244)=${todaysdate}") #     PerformedProcedureStepStartDate
+#tagstomodify+=("(0040,0245)=${todaystime}") #     PerformedProcedureStepStartTime
+#tagstomodify+=("(0040,0253)=Anonymous") #     PerformedProcedureStepID
+#tagstomodify+=("(0040,0254)=Anonymous") #     PerformedProcedureStepDescription
+
+#tagstomodify+=("(3002,0004)=Anonymous") #     RTImageDescription
+#tagstomodify+=("(3002,0004)=Anonymous") #     RTImageDescription
+#tagstomodify+=("(3002,0020)=Anonymous") #     RadiationMachineName
+#tagstomodify+=("(300a,00b2)=Anonymous") #     TreatmentMachineName
+#tagstomodify+=("(300a,0002)=Anonymous") #     RTPlanLabel
+#tagstomodify+=("(300a,0003)=Anonymous") #     RTPlanName
+#tagstomodify+=("(300a,0006)=${todaysdate}") #    RTPlanDate
+#tagstomodify+=("(300a,0007)=${todaystime}") #    RTPlanTime
+#tagstomodify+=("(300a,0016)=Anonymous") #     DoseReferenceDescription
+
+
+# Invoke DCMtk to erase and modify tags.
+#
+# Note: They are packed this way to avoid weirdness with quotation.
+printf 'Performing more specific anonymization now...\n'
+
+invocation=()
+invocation+=(dcmodify)
+#invocation+=(--verbose)
+#invocation+=(--gen-stud-uid) # Does not cache UIDs across the whole dataset!
+#invocation+=(--gen-ser-uid)  # Does not cache UIDs across the whole dataset!
+#invocation+=(--gen-inst-uid) # Does not cache UIDs across the whole dataset!
+#invocation+=(--erase-private)
+invocation+=(--no-backup)
+invocation+=(--quiet)
+invocation+=(--ignore-missing-tags)
+invocation+=(--ignore-un-values)
+invocation+=(--ignore-errors)
+invocation+=("${anondir}"/*)
+
+for i in "${tagstoerase[@]}" ; do
+    invocation+=(--erase-all)
+    invocation+=("${i}")
+done
+for i in "${tagstomodify[@]}" ; do
+    invocation+=(--modify-all)
+    invocation+=("${i}")
+done
+"${invocation[@]}"    # <--- invoked here!
+
+
+# Ensure the StudyInstanceUID, SeriesInstanceUID, FrameofReferenceUID all coincide.
+#
+# Note: For some reason DCMtk does not always synchronize these UIDs. So I generate my own to override to be safe.
+#dcmodify --no-backup --quiet \
+#     --ignore-errors \
+#     --modify-all "(0020,000d)=1.2.$RANDOM.$RANDOM.$RANDOM.$RANDOM" \
+#     --modify-all "(0020,000e)=1.2.$RANDOM.$RANDOM.$RANDOM.$RANDOM" \
+#     --modify-all "(0020,0052)=1.2.$RANDOM.$RANDOM.$RANDOM.$RANDOM" \
+#     "${anondir}"/*
+
+
+
+# Rename the files.
+#
+# Note: This step is necessary because the filenames commonly contain the original UIDs / pre-anon data.
+(
+c=0
+cd "${anondir}"
+for i in * ; do
+    #modality=$( dicomautomaton_dump "${i}" 0008 0060 )
+    modality=$( dcmdump -q +T +Qo --search Modality "${i}" | 
+	          sed -e 's/.*\[//' -e 's/\].*//' | 
+		  tr -d -c '[[:alnum:]]' )
+    newname=$( printf "${modality}_%04d.dcm" "$c" )
+    mv -n "${i}" "${newname}"
+    c=$(( 1 + $c ))
+done
+)
+
+
+# Dump all encountered tags in all files for inspection.
+printf 'Gathering information about DICOM files for your inspection.\n'
+(
+printf 'Thoroughly inspect this file... (computing now)...\n' 
+printf 'List of all tags encountered in output files...\n' 
+for i in "${anondir}/"*dcm ; do 
+    dcmdump "$i"
+done | 
+  sed -e 's/^[ ]*//' -e 's/[ ]*$//' -e 's/  / /g' | 
+  sort -u 
+) | less
+
+
+# List the key UIDs for Dump all encountered tags in all files for inspection.
+printf 'Gathering information about DICOM files for your inspection.\n'
+(
+printf 'Thoroughly inspect this file... (computing now)...\n' 
+printf 'List of all key UIDs present in INPUT files...\n' 
+dcmdump "${thedir}/"* | 
+  grep -i 'Series.*UID\|Study.*UID\|Frame.*Ref.*UID' | 
+  sed -e 's/^[ ]*//' -e 's/[ ]*$//' -e 's/  / /g' | 
+  sort | uniq -c
+printf '\n\n'
+printf 'List of all key UIDs present in OUTPUT files.\n' 
+dcmdump "${anondir}/"* | 
+  grep -i 'Series.*UID\|Study.*UID\|Frame.*Ref.*UID' | 
+  sed -e 's/^[ ]*//' -e 's/[ ]*$//' -e 's/  / /g' | 
+  sort | uniq -c
+) | less
+
+
+
+
+
+ 
+
+
