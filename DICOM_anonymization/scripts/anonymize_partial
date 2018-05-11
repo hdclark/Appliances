@@ -30,6 +30,32 @@ genericUID() {
 }
 export -f genericUID
 
+# A routine to extract the modality from a DICOM file.
+# Must provide a filename.
+# Returns an empty string on failure.
+get_modality() {
+    #dicomautomaton_dump "$@" 0008 0060
+    dcmdump -q +T +Qo --search Modality "$@" 2>/dev/null |
+        sed -e 's/.*\[//' -e 's/\].*//' 2>/dev/null |
+		tr -d -c '[[:alnum:]]' 2>/dev/null
+}
+export -f get_modality
+
+# Whitelist files that are supported. Place a link for each to a working directory and disregard
+# the other files.
+WORKDIR="$(mktemp -d)"
+(
+cd "${thedir}"
+for i in * ; do
+    modality=$( get_modality "${i}" )
+    if [[ "$modality" =~ ^(CT|RTSTRUCT|RTIMAGE|REG|RTPLAN|RTDOSE)$ ]] ; then
+        ln -s "$(pwd)/${i}"  "${WORKDIR}/${i}"
+    else
+        printf -- "Ignoring file '${i}'.\n" 2>&1
+    fi
+done
+)
+
 
 # Perform a basic anonymization. Note that this is not really sufficient for most purposes.
 #
@@ -38,9 +64,10 @@ export -f genericUID
 printf 'Performing basic anonymization to re-write StudyInstanceUIDs and SeriesInstanceUIDs.\n'
 printf ' This could take a while because all files are copied...\n'
 apasswd=$( openssl rand -base64 128 | head -c 64 )
-gdcmanon -r --continue -p "${apasswd}" -V -i "${thedir}" -o "${anondir}"/
+gdcmanon -r --continue -p "${apasswd}" -V -i "${WORKDIR}" -o "${anondir}"/
 # OR, you can fallback (without any anonymization) to:
-#rsync -avP "${thedir}/" "${anondir}/"
+#rsync -avPL "${WORKDIR}/" "${anondir}/"
+
 
 # More precisely remove tags (according to the DICOM supplement concerning anonymizing files; see below).
 todaysdate=$( date +%Y%m%d )
@@ -441,10 +468,7 @@ done
 c=0
 cd "${anondir}"
 for i in * ; do
-    #modality=$( dicomautomaton_dump "${i}" 0008 0060 )
-    modality=$( dcmdump -q +T +Qo --search Modality "${i}" | 
-	          sed -e 's/.*\[//' -e 's/\].*//' | 
-		  tr -d -c '[[:alnum:]]' )
+    modality=$( get_modality "${i}" )
     newname=$( printf "${modality}_%04d.dcm" "$c" )
     mv -n "${i}" "${newname}"
     c=$(( 1 + $c ))
@@ -470,7 +494,7 @@ printf 'Gathering information about DICOM files for your inspection.\n'
 (
 printf 'Thoroughly inspect this file... (computing now)...\n' 
 printf 'List of all key UIDs present in INPUT files...\n' 
-dcmdump "${thedir}/"* | 
+dcmdump "${WORKDIR}/"* | 
   grep -i 'Series.*UID\|Study.*UID\|Frame.*Ref.*UID' | 
   sed -e 's/^[ ]*//' -e 's/[ ]*$//' -e 's/  / /g' | 
   sort | uniq -c
@@ -483,6 +507,9 @@ dcmdump "${anondir}/"* |
 ) | less
 
 
+rmdir "${WORKDIR}/" 2>/dev/null ||
+    printf "Some files were not anonymized. They are NOT included in the output.\n" 1>&2
+rm -rf "${WORKDIR}/" 2>/dev/null
 
 
 
