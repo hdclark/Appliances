@@ -1,7 +1,7 @@
 
-FROM debian:stable
+#FROM debian:stable
 #FROM debian:testing
-#FROM debian:unstable
+FROM debian:unstable
 
 LABEL maintainer="http://www.halclark.ca" \
       description="Containerized DICOM anonymizer."
