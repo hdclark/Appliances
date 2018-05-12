@@ -93,7 +93,7 @@ for i in * ; do
     files=("${i}")
     tags=(Modality)
     modality=$( get_keyvalue files tags )
-    if [[ "$modality" =~ ^(CT|MR|RTSTRUCT|RTIMAGE|REG|RTPLAN|RTDOSE)$ ]] ; then
+    if [[ "$modality" =~ ^(CT|MR|RTSTRUCT|RTIMAGE|REG|RTPLAN|RTDOSE|RTRECORD)$ ]] ; then
         ln -s "$(pwd)/${i}"  "${WORKDIR}/${i}"
     else
         printf -- "Ignoring file '${i}'.\n" 2>&1
@@ -110,16 +110,16 @@ done
 # Note: With the homemade UID anony-synchronizer below, this pass might not be needed.
 #       Consider disabling if more limitations of its use is discovered.
 #
-printf "\n"
-printf 'Performing basic anonymization to re-write StudyInstanceUIDs and SeriesInstanceUIDs.\n'
-printf "This step is performed by gdcmanon.\n"
-printf 'It can take a while because all files are copied during the anonymization process.\n'
-printf "Please wait...\n"
-printf "\n"
-apasswd=$( openssl rand -base64 128 | head -c 64 )
-gdcmanon -r --continue -p "${apasswd}" -V -i "${WORKDIR}" -o "${anondir}"/
+#printf "\n"
+#printf 'Performing basic anonymization to re-write StudyInstanceUIDs and SeriesInstanceUIDs.\n'
+#printf "This step is performed by gdcmanon.\n"
+#printf 'It can take a while because all files are copied during the anonymization process.\n'
+#printf "Please wait...\n"
+#printf "\n"
+#apasswd=$( openssl rand -base64 128 | head -c 64 )
+#gdcmanon -r --continue -p "${apasswd}" -V -i "${WORKDIR}" -o "${anondir}"/
 # OR, you can fallback (without any anonymization) to:
-#rsync -avPL "${WORKDIR}/" "${anondir}/"
+rsync -avPL "${WORKDIR}/" "${anondir}/"
 
 
 # More precisely remove tags (according to the DICOM supplement concerning anonymizing files; see below).
@@ -531,15 +531,24 @@ files=("${anondir}"/*)
 get_keyvalue files UIDtags | sort -u > "${UIDDIR}"/all_UIDs 
 
 while read aUID ; do
-    printf -- "s/[>]${aUID}/>$(genericUID)/g\n" >> "${UIDDIR}"/replacements
+    escapedUID=$( printf -- "${aUID}" | sed -e 's@[.]@[.]@g' )
+    printf -- "s/[>]${escapedUID}/>$(genericUID)/g\n" >> "${UIDDIR}"/replacements
 done < "${UIDDIR}"/all_UIDs
 
+N_replacements=$( wc -l "${UIDDIR}"/replacements | cut -f 1 -d ' ' )
+printf "Found ${N_replacements} UIDs to replace.\n"
+
+N_files=$( ls "${anondir}"/* | wc -l | cut -f 1 -d ' ' )
+c=1
 for i in "${anondir}"/* ; do
     ln -s "$i" /tmp/tmp.dcm
     dcm2xml --load-all --dcmtk-format --write-binary-data /tmp/tmp.dcm |
         sed -f "${UIDDIR}"/replacements |
         xml2dcm --group-length-recalc - "$i" 
     unlink /tmp/tmp.dcm
+
+    printf "  Completed file ${c} of ${N_files}...\n"
+    c=$((1+$c))
 done
 rm -rf "${UIDDIR}"
 )
@@ -609,13 +618,9 @@ printf "\n"
 printf 'Now cleaning up resources.\n'
 printf "Please wait...\n"
 printf "\n"
-rmdir "${WORKDIR}/" 2>/dev/null || (
-    printf "The following files were not anonymized.\n" 1>&2
-    printf "They are NOT included in the output.\n" 1>&2
-    find "${WORKDIR}/" -type f -ls
-)
 rm -rf "${WORKDIR}/" 2>/dev/null
 
+printf "Done\n"
 
 
  
