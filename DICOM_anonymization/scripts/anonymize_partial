@@ -24,31 +24,76 @@ mkdir -p "${anondir}"/
 printf -- "Anonymizing '${thedir}' to '$anondir' ...\n"
 
 
-# A simple routine to generate toy UIDs.
+# A simple routine to generate (toy) UIDs.
 genericUID() {
-    printf "1.2.$RANDOM.$RANDOM.$RANDOM.$RANDOM"
+    printf "1.2.54328975.${RANDOM}.${RANDOM}${RANDOM}.$(date +%Y%m%d.%N)"
 }
 export -f genericUID
 
+
 # A routine to extract the modality from a DICOM file.
-# Must provide a filename.
-# Returns an empty string on failure.
-get_modality() {
-    #dicomautomaton_dump "$@" 0008 0060
-    dcmdump -q +T +Qo --search Modality "$@" 2>/dev/null |
-        sed -e 's/.*\[//' -e 's/\].*//' 2>/dev/null |
-		tr -d -c '[[:alnum:]]' 2>/dev/null
+# Arguments:  array_of_files  array_of_DICOM_tags
+#
+# Examples:
+#    thefiles=()
+#    thefiles+=("somefile.dcm")
+#    ...
+#    tags=(Modality StudyInstaceUID)
+#    get_keyvalue  thefiles tags
+#
+# Notes:
+#   - Returns an empty string on failure.
+#   - Each line contains one value. Multiple tags => multiple results.
+#
+get_keyvalue() {
+    local -n impl_files=$1  # This is a reference to an array.
+    local -n impl_keys=$2  # This is a reference to an array.
+
+    invocation=()
+    invocation+=(dcmdump)
+    invocation+=(--quiet)
+    invocation+=(--print-tree)
+    invocation+=(--quote-as-octal)
+    invocation+=(--ignore-errors)
+    invocation+=(--search-all)
+    for i in "${impl_keys[@]}" ; do
+        invocation+=(--search)
+        invocation+=("${i}")
+    done
+    for i in "${impl_files[@]}" ; do
+        invocation+=("${i}")
+    done
+    "${invocation[@]}" |  # <--- invoked here!
+        sed -e 's/.*\[//' -e 's/\].*//' -e '/^$/d'
 }
-export -f get_modality
+export -f get_keyvalue
+
+
+
 
 # Whitelist files that are supported. Place a link for each to a working directory and disregard
 # the other files.
+printf "\n"
+printf "Whitelisting files to anonymize based on modality.\n"
+printf "This step is necessary because gdcmanon refuses to operate on unrecognized files.\n"
+printf "It may take a while because every file needs to be loaded and parsed\n"
+printf "Please wait...\n"
+printf "\n"
 WORKDIR="$(mktemp -d)"
 (
+## Find files and pack them into a Bash array.
+## Note: From https://stackoverflow.com/a/23357277 circa 20180511.
+#ALLFILES=()
+#while IFS=  read -r -d $'\0'; do
+#    ALLFILES+=("$REPLY")
+#done < <(find -P "${thedir}" -type f -print0)
+
 cd "${thedir}"
 for i in * ; do
-    modality=$( get_modality "${i}" )
-    if [[ "$modality" =~ ^(CT|RTSTRUCT|RTIMAGE|REG|RTPLAN|RTDOSE)$ ]] ; then
+    files=("${i}")
+    tags=(Modality)
+    modality=$( get_keyvalue files tags )
+    if [[ "$modality" =~ ^(CT|MR|RTSTRUCT|RTIMAGE|REG|RTPLAN|RTDOSE)$ ]] ; then
         ln -s "$(pwd)/${i}"  "${WORKDIR}/${i}"
     else
         printf -- "Ignoring file '${i}'.\n" 2>&1
@@ -61,8 +106,16 @@ done
 #
 # Note: This pass is necessary to re-issue synchronized StudyInstanceUIDs and SeriesInstanceUIDs.
 #       For some reason DCMtk does not synchronize them.
+#
+# Note: With the homemade UID anony-synchronizer below, this pass might not be needed.
+#       Consider disabling if more limitations of its use is discovered.
+#
+printf "\n"
 printf 'Performing basic anonymization to re-write StudyInstanceUIDs and SeriesInstanceUIDs.\n'
-printf ' This could take a while because all files are copied...\n'
+printf "This step is performed by gdcmanon.\n"
+printf 'It can take a while because all files are copied during the anonymization process.\n'
+printf "Please wait...\n"
+printf "\n"
 apasswd=$( openssl rand -base64 128 | head -c 64 )
 gdcmanon -r --continue -p "${apasswd}" -V -i "${WORKDIR}" -o "${anondir}"/
 # OR, you can fallback (without any anonymization) to:
@@ -319,6 +372,10 @@ tagstomodify+=("(0040,A123)=Anonymous") #     Person Name
 #tagstomodify+=("(0032,1060)=Anonymous") #     Requested Procedure Description                                      
 tagstomodify+=("(300E,0008)=Anonymous") #     Reviewer Name
 
+printf "\n"
+printf "You will now be prompted for info to imbue the files with.\n"
+printf "\n"
+
 printf "Patient ID? (e.g., 'anon_1234')\n"
 read -e -i "anon_$RANDOM$RANDOM" PatientID
 tagstomodify+=("(0010,0020)=${PatientID}") #     Patient ID                                                           
@@ -362,37 +419,43 @@ tagstomodify+=("(0040,A088)=") #     Verifying Observer Identification Code Sequ
     
 
 
-# UIDs that should be changed in lockstep. 
-#tagstomodify+=("(0020,000D)=$(genericUID)") #     Study Instance UID                                                   
-#tagstomodify+=("(0020,000E)=$(genericUID)") #     Series Instance UID                                                  
-#tagstomodify+=("(0008,0018)=$(genericUID)") #     SOP Instance UID                                                     
-#tagstomodify+=("(0008,1155)=$(genericUID)") #     Referenced SOP Instance UID                                          
-#tagstomodify+=("(0020,0052)=$(genericUID)") #     Frame of Reference UID                                               
-#tagstomodify+=("(3006,0024)=$(genericUID)") #     Referenced Frame of Reference UID                                    
+# UIDs that should be changed in lockstep across all files.
+#
+# Note: These will be replaced regardless of where in the file they occur via 
+#       dcm2xml -> regex replacement -> xml2dcm. If the UIDs appear in comments they will also
+#       be replaced. This can be fixed by properly transforming the XML using XML-specific tools
+#       or possibly even slightly more involved regex if the XML is regular.
+UIDtags=()
+UIDtags+=("0020,000D") #     Study Instance UID                                                   
+UIDtags+=("0020,000E") #     Series Instance UID                                                  
+UIDtags+=("0008,0018") #     SOP Instance UID                                                     
+UIDtags+=("0008,1155") #     Referenced SOP Instance UID                                          
+UIDtags+=("0020,0052") #     Frame of Reference UID                                               
+UIDtags+=("3006,0024") #     Referenced Frame of Reference UID                                    
+UIDtags+=("300A,0013") #     Dose Reference UID                                                   
 
-tagstomodify+=("(0020,0200)=$(genericUID)") #     Synchronization Frame of Reference UID                               
-tagstomodify+=("(0008,3010)=$(genericUID)") #     Irradiation Event UID                                                
-tagstomodify+=("(0088,0140)=$(genericUID)") #     Storage Media File-set UID                                           
-tagstomodify+=("(0000,1001)=$(genericUID)") #     Requested SOP Instance UID                                           
-tagstomodify+=("(0004,1511)=$(genericUID)") #     Referenced SOP Instance UID in File                                  
-tagstomodify+=("(0020,9161)=$(genericUID)") #     Concatenation UID                                                    
-tagstomodify+=("(0018,1002)=$(genericUID)") #     Device UID                                                           
-tagstomodify+=("(3006,00C2)=$(genericUID)") #     Related Frame of Reference UID                                       
-tagstomodify+=("(0002,0003)=$(genericUID)") #     Media Storage SOP Instance UID                                       
-tagstomodify+=("(300A,0013)=$(genericUID)") #     Dose Reference UID                                                   
-tagstomodify+=("(0040,4023)=$(genericUID)") #     Referenced General Purpose Scheduled Procedure	Step Transaction UID 
-tagstomodify+=("(0008,9123)=$(genericUID)") #     Creator Version UID                                                  
-tagstomodify+=("(0008,0014)=$(genericUID)") #     Instance Creator UID                                                 
-tagstomodify+=("(0028,1214)=$(genericUID)") #     Large Palette Color Lookup Table UID                                 
-tagstomodify+=("(0040,A124)=$(genericUID)") #     UID                                                                  
-tagstomodify+=("(0020,9164)=$(genericUID)") #     Dimension Organization UID                                           
-tagstomodify+=("(0008,1195)=$(genericUID)") #     Transaction UID                                                      
-tagstomodify+=("(0008,0058)=$(genericUID)") #     Failed SOP Instance UID List                                         
-tagstomodify+=("(0028,1199)=$(genericUID)") #     Palette Color Lookup Table UID                                       
-tagstomodify+=("(0070,031A)=$(genericUID)") #     Fiducial UID                                                         
-tagstomodify+=("(0040,DB0C)=$(genericUID)") #     Template Extension Organization UID                                  
-tagstomodify+=("(0008,010D)=$(genericUID)") #     Context Group Extension Creator UID                                  
-tagstomodify+=("(0040,DB0D)=$(genericUID)") #     Template Extension Creator UID                                       
+UIDtags+=("0020,0200") #     Synchronization Frame of Reference UID                               
+UIDtags+=("0008,3010") #     Irradiation Event UID                                                
+UIDtags+=("0088,0140") #     Storage Media File-set UID                                           
+UIDtags+=("0000,1001") #     Requested SOP Instance UID                                           
+UIDtags+=("0004,1511") #     Referenced SOP Instance UID in File                                  
+UIDtags+=("0020,9161") #     Concatenation UID                                                    
+UIDtags+=("0018,1002") #     Device UID                                                           
+UIDtags+=("3006,00C2") #     Related Frame of Reference UID                                       
+UIDtags+=("0002,0003") #     Media Storage SOP Instance UID                                       
+UIDtags+=("0040,4023") #     Referenced General Purpose Scheduled Procedure	Step Transaction UID 
+UIDtags+=("0008,9123") #     Creator Version UID                                                  
+UIDtags+=("0008,0014") #     Instance Creator UID                                                 
+UIDtags+=("0028,1214") #     Large Palette Color Lookup Table UID                                 
+UIDtags+=("0040,A124") #     UID                                                                  
+UIDtags+=("0020,9164") #     Dimension Organization UID                                           
+UIDtags+=("0008,1195") #     Transaction UID                                                      
+UIDtags+=("0008,0058") #     Failed SOP Instance UID List                                         
+UIDtags+=("0028,1199") #     Palette Color Lookup Table UID                                       
+UIDtags+=("0070,031A") #     Fiducial UID                                                         
+UIDtags+=("0040,DB0C") #     Template Extension Organization UID                                  
+UIDtags+=("0008,010D") #     Context Group Extension Creator UID                                  
+UIDtags+=("0040,DB0D") #     Template Extension Creator UID                                       
 
 
 # Other tags I've seen in files.
@@ -422,7 +485,12 @@ tagstomodify+=("(0032,1033)=Anonymous") #     RequestingService
 # Invoke DCMtk to erase and modify tags.
 #
 # Note: They are packed this way to avoid weirdness with quotation.
-printf 'Performing more specific anonymization now...\n'
+printf "\n"
+printf 'Performing more specific anonymization now.\n'
+printf "This step re-writes or erases tags that are likely to contain personally identifying info.\n"
+printf "It is performed by DCMtk.\n"
+printf "Please wait...\n"
+printf "\n"
 
 invocation=()
 invocation+=(dcmodify)
@@ -449,26 +517,48 @@ done
 "${invocation[@]}"    # <--- invoked here!
 
 
-# Ensure the StudyInstanceUID, SeriesInstanceUID, FrameofReferenceUID all coincide.
-#
-# Note: For some reason DCMtk does not always synchronize these UIDs. So I generate my own to override to be safe.
-#dcmodify --no-backup --quiet \
-#     --ignore-errors \
-#     --modify-all "(0020,000d)=1.2.$RANDOM.$RANDOM.$RANDOM.$RANDOM" \
-#     --modify-all "(0020,000e)=1.2.$RANDOM.$RANDOM.$RANDOM.$RANDOM" \
-#     --modify-all "(0020,0052)=1.2.$RANDOM.$RANDOM.$RANDOM.$RANDOM" \
-#     "${anondir}"/*
+# Synchronously anonymize UIDs not anonymized by the above.
+printf "\n"
+printf "Performing a UID synchronous anonymization.\n"
+printf "UIDs are extracted from the files and files are then round-tripped DCM->XML->DCM.\n"
+printf "Regex replacements are applied to the XML.\n"
+printf "Because the files can be large (especially files with large binary data), this can take a while.\n"
+printf "Please wait...\n"
+printf "\n"
+(
+UIDDIR="$(mktemp -d)"
+files=("${anondir}"/*)
+get_keyvalue files UIDtags | sort -u > "${UIDDIR}"/all_UIDs 
 
+while read aUID ; do
+    printf -- "s/[>]${aUID}/>$(genericUID)/g\n" >> "${UIDDIR}"/replacements
+done < "${UIDDIR}"/all_UIDs
+
+for i in "${anondir}"/* ; do
+    ln -s "$i" /tmp/tmp.dcm
+    dcm2xml --load-all --dcmtk-format --write-binary-data /tmp/tmp.dcm |
+        sed -f "${UIDDIR}"/replacements |
+        xml2dcm --group-length-recalc - "$i" 
+    unlink /tmp/tmp.dcm
+done
+rm -rf "${UIDDIR}"
+)
 
 
 # Rename the files.
 #
 # Note: This step is necessary because the filenames commonly contain the original UIDs / pre-anon data.
+printf "\n"
+printf "Files are now being renamed to strip identifying info from the filenames.\n"
+printf "Please wait...\n"
+printf "\n"
 (
 c=0
 cd "${anondir}"
 for i in * ; do
-    modality=$( get_modality "${i}" )
+    files=("${i}")
+    tags=(Modality)
+    modality=$( get_keyvalue files tags )
     newname=$( printf "${modality}_%04d.dcm" "$c" )
     mv -n "${i}" "${newname}"
     c=$(( 1 + $c ))
@@ -477,10 +567,13 @@ done
 
 
 # Dump all encountered tags in all files for inspection.
-printf 'Gathering information about DICOM files for your inspection.\n'
 (
-printf 'Thoroughly inspect this file... (computing now)...\n' 
-printf 'List of all tags encountered in output files...\n' 
+printf "\n"
+printf 'Now gathering information about DICOM files for your inspection.\n'
+printf 'This listing contains all tags encountered in the anonymized files.\n' 
+printf 'Thoroughly inspect this file for personal information.\n' 
+printf "Please wait...\n"
+printf "\n"
 for i in "${anondir}/"*dcm ; do 
     dcmdump "$i"
 done | 
@@ -490,16 +583,21 @@ done |
 
 
 # List the key UIDs for Dump all encountered tags in all files for inspection.
-printf 'Gathering information about DICOM files for your inspection.\n'
 (
-printf 'Thoroughly inspect this file... (computing now)...\n' 
+printf "\n"
+printf 'Now gathering information about DICOM files for your inspection.\n'
+printf 'This listing contains all UIDs present in INPUT and OUTPUT files.\n' 
+printf 'Thoroughly inspect this file for personal information.\n' 
+printf "\n"
 printf 'List of all key UIDs present in INPUT files...\n' 
+printf "Please wait...\n"
 dcmdump "${WORKDIR}/"* | 
   grep -i 'Series.*UID\|Study.*UID\|Frame.*Ref.*UID' | 
   sed -e 's/^[ ]*//' -e 's/[ ]*$//' -e 's/  / /g' | 
   sort | uniq -c
 printf '\n\n'
-printf 'List of all key UIDs present in OUTPUT files.\n' 
+printf 'List of all key UIDs present in OUTPUT files...\n' 
+printf "Please wait...\n"
 dcmdump "${anondir}/"* | 
   grep -i 'Series.*UID\|Study.*UID\|Frame.*Ref.*UID' | 
   sed -e 's/^[ ]*//' -e 's/[ ]*$//' -e 's/  / /g' | 
@@ -507,8 +605,15 @@ dcmdump "${anondir}/"* |
 ) | less
 
 
-rmdir "${WORKDIR}/" 2>/dev/null ||
-    printf "Some files were not anonymized. They are NOT included in the output.\n" 1>&2
+printf "\n"
+printf 'Now cleaning up resources.\n'
+printf "Please wait...\n"
+printf "\n"
+rmdir "${WORKDIR}/" 2>/dev/null || (
+    printf "The following files were not anonymized.\n" 1>&2
+    printf "They are NOT included in the output.\n" 1>&2
+    find "${WORKDIR}/" -type f -ls
+)
 rm -rf "${WORKDIR}/" 2>/dev/null
 
 
