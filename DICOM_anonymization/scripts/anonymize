@@ -563,7 +563,7 @@ for i in * ; do
     files=("${i}")
     tags=(Modality)
     modality=$( get_keyvalue files tags )
-    newname=$( printf "${modality}_%04d.dcm" "$c" )
+    newname=$( printf "${modality}_%06d.dcm" "$c" )
     mv -n "${i}" "${newname}"
     c=$(( 1 + $c ))
 done
