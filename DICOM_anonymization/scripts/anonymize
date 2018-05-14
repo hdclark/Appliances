@@ -69,58 +69,6 @@ export -f get_keyvalue
 
 
 
-
-# Whitelist files that are supported. Place a link for each to a working directory and disregard
-# the other files.
-printf "\n"
-printf "Whitelisting files to anonymize based on modality.\n"
-printf "This step is necessary because gdcmanon refuses to operate on unrecognized files.\n"
-printf "It may take a while because every file needs to be loaded and parsed\n"
-printf "Please wait...\n"
-printf "\n"
-WORKDIR="$(mktemp -d)"
-(
-## Find files and pack them into a Bash array.
-## Note: From https://stackoverflow.com/a/23357277 circa 20180511.
-#ALLFILES=()
-#while IFS=  read -r -d $'\0'; do
-#    ALLFILES+=("$REPLY")
-#done < <(find -P "${thedir}" -type f -print0)
-
-cd "${thedir}"
-for i in * ; do
-    files=("${i}")
-    tags=(Modality)
-    modality=$( get_keyvalue files tags )
-    if [[ "$modality" =~ ^(CT|MR|RTSTRUCT|RTIMAGE|REG|RTPLAN|RTDOSE|RTRECORD)$ ]] ; then
-        ln -s "$(pwd)/${i}"  "${WORKDIR}/${i}"
-    else
-        printf -- "Ignoring file '${i}'.\n" 2>&1
-    fi
-done
-)
-
-
-# Perform a basic anonymization. Note that this is not really sufficient for most purposes.
-#
-# Note: This pass is necessary to re-issue synchronized StudyInstanceUIDs and SeriesInstanceUIDs.
-#       For some reason DCMtk does not synchronize them.
-#
-# Note: With the homemade UID anony-synchronizer below, this pass might not be needed.
-#       Consider disabling if more limitations of its use is discovered.
-#
-#printf "\n"
-#printf 'Performing basic anonymization to re-write StudyInstanceUIDs and SeriesInstanceUIDs.\n'
-#printf "This step is performed by gdcmanon.\n"
-#printf 'It can take a while because all files are copied during the anonymization process.\n'
-#printf "Please wait...\n"
-#printf "\n"
-#apasswd=$( openssl rand -base64 128 | head -c 64 )
-#gdcmanon -r --continue -p "${apasswd}" -V -i "${WORKDIR}" -o "${anondir}"/
-# OR, you can fallback (without any anonymization) to:
-rsync -avPL "${WORKDIR}/" "${anondir}/"
-
-
 # More precisely remove tags (according to the DICOM supplement concerning anonymizing files; see below).
 todaysdate=$( date +%Y%m%d )
 todaystime=$( date +%H%M%S )
@@ -475,6 +423,58 @@ tagstomodify+=("(300a,0003)=Anonymous") #     RTPlanName
 tagstomodify+=("(300a,0006)=${todaysdate}") #    RTPlanDate
 tagstomodify+=("(300a,0007)=${todaystime}") #    RTPlanTime
 tagstomodify+=("(300a,0016)=Anonymous") #     DoseReferenceDescription
+
+
+# Whitelist files that are supported. Place a link for each to a working directory and disregard
+# the other files.
+printf "\n"
+printf "Whitelisting files to anonymize based on modality.\n"
+printf "This step is necessary because gdcmanon refuses to operate on unrecognized files.\n"
+printf "It may take a while because every file needs to be loaded and parsed\n"
+printf "Please wait...\n"
+printf "\n"
+WORKDIR="$(mktemp -d)"
+(
+## Find files and pack them into a Bash array.
+## Note: From https://stackoverflow.com/a/23357277 circa 20180511.
+#ALLFILES=()
+#while IFS=  read -r -d $'\0'; do
+#    ALLFILES+=("$REPLY")
+#done < <(find -P "${thedir}" -type f -print0)
+
+cd "${thedir}"
+for i in * ; do
+    files=("${i}")
+    tags=(Modality)
+    modality=$( get_keyvalue files tags )
+    if [[ "$modality" =~ ^(CT|MR|RTSTRUCT|RTIMAGE|REG|RTPLAN|RTDOSE|RTRECORD)$ ]] ; then
+        ln -s "$(pwd)/${i}"  "${WORKDIR}/${i}"
+    else
+        printf -- "Ignoring file '${i}'.\n" 2>&1
+    fi
+done
+)
+
+
+# Perform a basic anonymization. Note that this is not really sufficient for most purposes.
+#
+# Note: This pass is necessary to re-issue synchronized StudyInstanceUIDs and SeriesInstanceUIDs.
+#       For some reason DCMtk does not synchronize them.
+#
+# Note: With the homemade UID anony-synchronizer below, this pass might not be needed.
+#       Consider disabling if more limitations of its use is discovered.
+#
+#printf "\n"
+#printf 'Performing basic anonymization to re-write StudyInstanceUIDs and SeriesInstanceUIDs.\n'
+#printf "This step is performed by gdcmanon.\n"
+#printf 'It can take a while because all files are copied during the anonymization process.\n'
+#printf "Please wait...\n"
+#printf "\n"
+#apasswd=$( openssl rand -base64 128 | head -c 64 )
+#gdcmanon -r --continue -p "${apasswd}" -V -i "${WORKDIR}" -o "${anondir}"/
+# OR, you can fallback (without any anonymization) to:
+rsync -avPL "${WORKDIR}/" "${anondir}/"
+
 
 
 # Invoke DCMtk to erase and modify tags.
