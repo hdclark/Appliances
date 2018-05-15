@@ -537,18 +537,20 @@ N_files=$( ls "${anondir}"/* | wc -l | cut -f 1 -d ' ' )
 progressfile=$(mktemp)
 find "${anondir}"/ -mindepth 1 -maxdepth 1 -print0 |
     xargs -0 -I '{}' -P $(nproc || echo 2) -n 1 -r  bash -c '
-        printf "\n" >> '"${progressfile}"'
         tmpfile=$(mktemp)
         mv '"'{}'"' "${tmpfile}" 
         dcm2xml --load-all --dcmtk-format --write-binary-data "${tmpfile}" |
             sed -f "'"${UIDDIR}"'"/replacements |
             xml2dcm --group-length-recalc - '"'{}'"' 
         rm "${tmpfile}"
+
+        # Report progress using a file as a semaphore.
+        printf "\n" >> '"${progressfile}"'
         printf "  Completed file $(wc -l '"${progressfile}"' | cut -f 1 -d" ") of '"${N_files}"'...\n"
     '
 rm -rf "${UIDDIR}"
-)
 rm "${progressfile}"
+)
 
 
 # Rename the files.
