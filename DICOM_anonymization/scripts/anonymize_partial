@@ -26,7 +26,7 @@ printf -- "Anonymizing '${thedir}' to '$anondir' ...\n"
 
 # A simple routine to generate (toy) UIDs.
 genericUID() {
-    printf "1.2.54328975.${RANDOM}.${RANDOM}${RANDOM}.$(date +%Y%m%d.%N)"
+    printf "1.2.54328975.${RANDOM}.${RANDOM}${RANDOM}.$(date +%Y%m%d.%-N)"
 }
 export -f genericUID
 
