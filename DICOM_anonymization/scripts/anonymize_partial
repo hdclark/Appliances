@@ -440,6 +440,7 @@ printf "It may take a while because every file needs to be loaded and parsed\n"
 printf "Please wait...\n"
 printf "\n"
 WORKDIR="$(mktemp -d)"
+trap "rm -rf $WORKDIR" EXIT
 (
 ## Find files and pack them into a Bash array.
 ## Note: From https://stackoverflow.com/a/23357277 circa 20180511.
@@ -580,6 +581,11 @@ done
 )
 
 
+###############################################################################################################
+####### Anonymization complete. Now generating report for inspection.                                   #######
+###############################################################################################################
+# Note: This could be optional.
+
 # Dump all encountered tags in all files for inspection.
 (
 printf "\n"
@@ -619,15 +625,5 @@ dcmdump "${anondir}/"* |
 ) | less
 
 
-printf "\n"
-printf 'Now cleaning up resources.\n'
-printf "Please wait...\n"
-printf "\n"
-rm -rf "${WORKDIR}/" 2>/dev/null
-
 printf "Done\n"
-
-
- 
-
 
