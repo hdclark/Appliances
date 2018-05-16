@@ -549,6 +549,7 @@ find "${anondir}"/ -mindepth 1 -maxdepth 1 -print0 |
         dcm2xml --load-all --dcmtk-format --write-binary-data "${tmpfile}" |
             sed -f "'"${UIDDIR}"'"/replacements |
             xml2dcm --group-length-recalc - '"'{}'"' 
+        chown --reference="${tmpfile}" '"'{}'"'
         rm "${tmpfile}"
 
         # Report progress using a file as a semaphore.
@@ -558,6 +559,7 @@ find "${anondir}"/ -mindepth 1 -maxdepth 1 -print0 |
 rm -rf "${UIDDIR}"
 rm "${progressfile}"
 )
+chown -R --reference="${WORKDIR}" "${anondir}"
 
 
 # Rename the files.
