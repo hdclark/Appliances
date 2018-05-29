@@ -1,6 +1,6 @@
 #!/bin/bash
 
-image_basename="texlive"
+image_basename="docutools"
 
 set -e 
 

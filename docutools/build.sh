@@ -2,7 +2,7 @@
 
 set -e 
 
-image_basename="texlive"
+image_basename="docutools"
 
 commit_id=$(git rev-parse HEAD)
 

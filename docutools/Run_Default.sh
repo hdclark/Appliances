@@ -23,6 +23,10 @@
 
 # Run a service or perform an operation.
 pdflatex --version
+printf '\n----\n'
+pandoc --version
+printf '\n----\n'
+asciidoc --version
 
 ## Clean up, if necessary (usually not).
 #kill $xpid

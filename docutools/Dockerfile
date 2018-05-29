@@ -4,14 +4,7 @@ FROM debian:stable
 #FROM debian:unstable
 
 LABEL maintainer="http://www.halclark.ca" \
-      description="Containerized texlive."
-
-EXPOSE 22/tcp \
-       80/tcp    443/tcp \
-       104/tcp   104/udp \
-       2761/tcp  2761/udp \
-       2762/tcp  2762/udp \
-       11112/tcp 11112/udp
+      description="Containerized document processing tools."
 
 WORKDIR /resources
 ADD . /resources
@@ -41,6 +34,7 @@ RUN apt-get --yes update && \
       imagemagick \
       ghostscript \
       ghostscript-doc \
+      pdftk \
       `# ` \
       `# TeXlive stuff. ` \
       texlive-latex-base \
@@ -50,6 +44,19 @@ RUN apt-get --yes update && \
       texlive-latex-recommended \
       texlive-latex-recommended-doc \
       `# ` \
+      `# Pandoc. ` \
+      pandoc \
+      pandoc-citeproc \
+      `# ` \
+      `# Asciidoc. ` \
+      asciidoc \
+      asciidoc-dblatex \
+      vim-asciidoc \
+      `# ` \
+      `# Some suggested packages for Pandoc/Asciidoc. ` \
+      source-highlight \
+      dot2tex \
+      `# ` \
       `# Misc TeX-related tooling. ` \
       vim-latexsuite \
       texify \
@@ -58,6 +65,7 @@ RUN apt-get --yes update && \
       tth \
       ttm \
       untex \
+      chktex \
       mathtex \
       mimetex \
       rubber \
@@ -73,7 +81,11 @@ RUN apt-get --yes update && \
       latex2rtf \
       latex2rtf-doc \
       latexdiff \
-      latexml
+      latexml \
+      `# ` \
+      `# Misc. ` \
+      fonts-noto \
+      lmodern
 
 
 WORKDIR /scratch
