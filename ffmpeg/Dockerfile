@@ -27,9 +27,7 @@ RUN apt-get --yes update && \
       `# ` \
       `# FFmpeg ` \
       ffmpeg \
-      ffmpeg-doc \
-      `# ` \
-      `# Misc. ` \
+      ffmpeg-doc 
 
 
 WORKDIR /scratch
