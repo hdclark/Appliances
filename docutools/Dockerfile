@@ -44,6 +44,8 @@ RUN apt-get --yes update && \
       texlive-latex-recommended \
       texlive-latex-recommended-doc \
       texlive-xetex \
+      texlive-pstricks \
+      texlive-pstricks-doc \
       `# ` \
       `# Pandoc. ` \
       pandoc \
