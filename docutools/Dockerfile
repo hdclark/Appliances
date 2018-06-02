@@ -35,7 +35,6 @@ RUN apt-get --yes update && \
       imagemagick \
       ghostscript \
       ghostscript-doc \
-      pdftk \
       `# ` \
       `# TeXlive stuff. ` \
       texlive-latex-base \
