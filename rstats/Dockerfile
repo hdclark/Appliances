@@ -28,6 +28,7 @@ RUN apt-get --yes update && \
       sshfs \
       openssh-server \
       man-db \
+      wget \
       `# ` \
       `# R stuff. ` \
       r-base \
@@ -86,6 +87,21 @@ RUN apt-get --yes update && \
       r-cran-yaml \
       r-cran-zoo \
       r-doc-html
+
+# Install Firefox Fire fonts for plots that match Beamer's Metropolis theme.
+WORKDIR /extras
+#RUN  sed -i -e 's/main$/main contrib non-free/g' /etc/apt/sources.list && \
+#     apt-get update
+#RUN git clone 'https://github.com/eddelbuettel/pkg-fonts-fira' && \
+#      cd pkg-fonts-fira && \
+#RUN git clone 'https://github.com/mozilla/Fira.git' Fira && \
+RUN wget 'https://github.com/mozilla/Fira/archive/master.zip' -O Fira.zip && \
+      unzip -d Fira Fira.zip && \
+      cd Fira/Fira-master && \
+      chmod 644 otf/* ttf/* && \
+      mv otf/* ttf/* /usr/local/share/fonts/ && \
+      fc-cache && \
+      cd / && rm -rf /extras
 
 WORKDIR /scratch
 CMD ["/bin/bash", "/resources/Run_Default.sh"]
