@@ -75,49 +75,68 @@ xform_out=/outputs/stage_4_affine.txt
 #vf_out=/outputs/stage_4_affine_vf.nrrd
 
 
+#  ###################################################################################
+#  # BSpline registration.
+#  ###################################################################################
+#  [STAGE]
+#  xform=bspline
+#  impl=plastimatch
+#  metric=mi
+#  
+#  regularization_lambda=0.005
+#  #threading=openmp
+#  
+#  #max_its=5
+#  max_its=20
+#  
+#  res=4 4 2
+#  
+#  # Note: the nrrd vector deformation field file is large!
+#  #vf_out=/outputs/stage_5_bspline_vf.nrrd
+#  xform_out=/outputs/stage_5_bspline.txt
+#
+  
+  
+#  ###################################################################################
+#  # BSpline registration.
+#  ###################################################################################
+#  [STAGE]
+#  xform=bspline
+#  impl=plastimatch
+#  metric=mi
+#  
+#  regularization_lambda=0.005
+#  #threading=openmp
+#  
+#  #max_its=5
+#  max_its=50
+#  
+#  #res=4 4 2
+#  res=2 2 1
+#  #res=1 1 1
+#  
+#  # Note: the nrrd vector deformation field file is large!
+#  #vf_out=/outputs/stage_6_bspline_vf.nrrd
+#  xform_out=/outputs/stage_6_bspline.txt
+#  
+
+
 ###################################################################################
-# BSpline registration.
+# Plastimatch Demons algorithm.
 ###################################################################################
 [STAGE]
-xform=bspline
+xform=vf
 impl=plastimatch
-metric=mi
-
-regularization_lambda=0.005
-#threading=openmp
+optim=demons
 
 #max_its=5
-max_its=20
+max_its=50
 
-res=4 4 2
-
-# Note: the nrrd vector deformation field file is large!
-#vf_out=/outputs/stage_5_bspline_vf.nrrd
-xform_out=/outputs/stage_5_bspline.txt
-
-
-
-###################################################################################
-# BSpline registration.
-###################################################################################
-[STAGE]
-xform=bspline
-impl=plastimatch
-metric=mi
-
-regularization_lambda=0.005
-#threading=openmp
-
-#max_its=5
-max_its=30
-
-#res=4 4 2
 res=2 2 1
 #res=1 1 1
 
-# Note: the nrrd vector deformation field file is large!
-#vf_out=/outputs/stage_6_bspline_vf.nrrd
-xform_out=/outputs/stage_6_bspline.txt
+#xform_out=stage_3_itk_demons.txt   #  <-- Nothing to write to txt file.
+#vf_out=stage_3_itk_demons_vf.mha
 
 
 
