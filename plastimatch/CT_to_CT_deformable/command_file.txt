@@ -1,15 +1,9 @@
-# Driver for Plastimatch. This file was written by Hal Clark 20160104.
-# It was composed by tweaking the examples posted on the Plastimatch website.
-# See http://plastimatch.org/image_registration_guidebook.html or
-#   https://web.archive.org/web/20160104183127/http://plastimatch.org/image_registration_guidebook.html
-# 
-# The permitted elements of this file are documented at
-#   http://plastimatch.org/registration_command_file_reference.html
+
+# Driver file for Plastimatch. This file was written by Hal Clark on 20180705.
 #
-# See also the Ubuntu manpage 
-#   http://manpages.ubuntu.com/manpages/utopic/man1/plastimatch.1.html
-# and the synopsis at http://plastimatch.org/plastimatch.html .
+# See http://plastimatch.org/registration_command_file_reference.html for more info.
 #
+
 
 [GLOBAL]
 fixed=/fixed/
@@ -21,20 +15,46 @@ img_out_fmt=dicom
 
 
 ###################################################################################
+# Align images at the centre (3 DOF).
+###################################################################################
+[STAGE]
+xform=align_center
+
+xform_out=/outputs/stage_1_align.txt
+
+
+###################################################################################
+# Translation-only registration (3 DOF).
+###################################################################################
+[STAGE]
+xform=translation
+optim=rsg
+metric=mi
+
+#max_its=5
+max_its=1000
+
+res=4 4 2
+
+xform_out=/outputs/stage_2_translation.txt
+
+
+###################################################################################
 # Rigid registration (6 DOF).
 ###################################################################################
 [STAGE]
 xform=rigid
 optim=versor
+metric=mi
 
-#max_its=1
+#max_its=5
 max_its=1000
 
 #res=2 2 1
 res=1 1 1
 
-xform_out=stage_1_rigid.txt
-#vf_out=stage_1_rigid_vf.mha
+xform_out=/outputs/stage_3_rigid.txt
+#vf_out=/outputs/stage_3_rigid_vf.nrrd
 
 
 ###################################################################################
@@ -43,78 +63,61 @@ xform_out=stage_1_rigid.txt
 [STAGE]
 xform=affine
 optim=rsg
+metric=mi
 
-#max_its=1
+#max_its=5
 max_its=1000
 
 #res=2 2 1
 res=1 1 1
 
-xform_out=stage_2_affine.txt
-#vf_out=stage_2_affine_vf.mha
+xform_out=/outputs/stage_4_affine.txt
+#vf_out=/outputs/stage_4_affine_vf.nrrd
 
 
 ###################################################################################
-# ITK Demons algorithm.
+# BSpline registration.
 ###################################################################################
 [STAGE]
-xform=vf
-impl=itk
-optim=demons
+xform=bspline
+impl=plastimatch
+metric=mi
 
-#  Demons implementation that should be used:
-#    - fsf  (<--- the default),
-#    - diffeomorphic,
-#    - log_domain,
-#    - sym_log_domain
-optim_subtype=sym_log_domain
+regularization_lambda=0.005
+#threading=openmp
 
-#  Type of gradient that will be used to compute update force:
-#    - symmetric (i.e., compute gradient in fixed and moving image),
-#    - fixed,
-#    - warped_moving,
-#    - mapped_moving (i.e., not warped moving image).
-demons_gradient_type=symmetric
+#max_its=5
+max_its=20
 
-#  Set whether the update field is smoothed (regularized). Smoothing the update field 
-#  yields a solution viscous in nature. If demons_smooth_update_field is on, then the
-#  update field is smoothed with a Gaussian whose standard deviations are specified 
-#  with demons_std_update_field.
-demons_smooth_update_field=0
-demons_std_update_field=1
+res=4 4 2
 
-#  Set whether the deformation field should be smoothed (regularized). Smoothing the 
-#  deformation field yields a solution elastic in nature. If 
-#  demons_smooth_deformation_field is on, then the deformation field is smoothed with
-#  a Gaussian whose standard deviations are specified with demons_std_deformation_field.
-demons_smooth_deformation_field=1
-demons_std_deformation_field=2
+# Note: the nrrd vector deformation field file is large!
+#vf_out=/outputs/stage_5_bspline_vf.nrrd
+xform_out=/outputs/stage_5_bspline.txt
 
-#  Set the maximum update step length. In Thirion this is 0.5. Setting it to 0 implies
-#  no restriction (beware of numerical instability in this case).
-demons_step_length=1;
 
-#  Flag to turn on/off histogram equalization.
-histo_equ=0
 
-#  Number of histogram levels used for histogram equalization.
-num_hist_levels=100
+###################################################################################
+# BSpline registration.
+###################################################################################
+[STAGE]
+xform=bspline
+impl=plastimatch
+metric=mi
 
-#  Number of matching points used for histogram equalization.
-num_matching_points=10
+regularization_lambda=0.005
+#threading=openmp
 
-#  Flag to turn on/off threshold at mean intensity. If true, only source (reference) 
-#  pixels which are greater than the mean source (reference) intensity is used in the 
-#  histogram matching. If false, all pixels are used.
-thresh_mean_intensity=1
+#max_its=5
+max_its=30
 
-#max_its=1
-max_its=500
+#res=4 4 2
+res=2 2 1
+#res=1 1 1
 
-#res=2 2 1
-res=1 1 1
+# Note: the nrrd vector deformation field file is large!
+#vf_out=/outputs/stage_6_bspline_vf.nrrd
+xform_out=/outputs/stage_6_bspline.txt
 
-#xform_out=stage_3_itk_demons.txt   #  <-- Nothing to write to txt file.
-vf_out=stage_3_itk_demons_vf.mha
 
 
