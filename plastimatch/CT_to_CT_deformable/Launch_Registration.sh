@@ -75,25 +75,30 @@ set +e
 log_file="$outgoing_dir"/registration_log.txt
 
 
-# NOTE: REPLACE WITH BASH ARRAY TO GET AROUND STRINGIFICATION ISSUE BELOW
-command_mapping=""
-if [ ! -z "$command_file" ] ; then 
-    command_mapping=" -v $command_file:/command_file.txt:ro "   # <---- issue here
+invocation=()
+invocation+=(docker)
+invocation+=(run)
+invocation+=(-it)
+invocation+=(--rm)
+invocation+=(-v)
+invocation+=("$reference_dir":/fixed/:ro)
+invocation+=(-v)
+invocation+=("$deforming_dir":/moving/:ro)
+invocation+=(-v)
+invocation+=("$outgoing_dir":/outputs/:rw)
+if [ ! -z "$command_file" ] ; then
+    invocation+=(-v)
+    invocation+=("$command_file":/command_file.txt:ro)
 fi
+invocation+=(plastimatch:latest)
+invocation+=(/resources/CT_to_CT_deformable/Driver.sh)
+
 
 ###########################################################################################
 # Register the images:
 printf '### Registering now ###\n' | sudo tee -a "$log_file"
 
-sudo docker run \
-  -it --rm \
-  -v "$reference_dir":/fixed/:ro \
-  -v "$deforming_dir":/moving/:ro \
-  -v "$outgoing_dir":/outputs/:rw \
-  $command_mapping \
-  plastimatch:latest \
-  /resources/CT_to_CT_deformable/Driver.sh 2>&1 | sudo tee -a "$log_file"
-
+sudo "${invocation[@]}" 2>&1 | sudo tee -a "$log_file"
 
 ###########################################################################################
 # Post-processing:
