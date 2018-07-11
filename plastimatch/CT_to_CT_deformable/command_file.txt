@@ -130,7 +130,6 @@ res=2 2 1
 xform_out=/outputs/stage_6_bspline.txt
   
 
-
 ###################################################################################
 # Plastimatch Demons algorithm.
 ###################################################################################
@@ -149,6 +148,82 @@ res=2 2 1
 
 #xform_out=stage_7_demons.txt   #  <-- Nothing to write to txt file.
 #vf_out=stage_7_demons_vf.nrrd
+  
 
-
+#  ###################################################################################
+#  # ITK Demons algorithm.
+#  ###################################################################################
+#  # NOTE: As of 20180710 this stage will not work on SABRLIVER01 or SABRLIVER02 test
+#  #       volumes. The error displayed is:
+#  #           ...
+#  #           terminate called after throwing an instance of 'itk::ExceptionObject'
+#  #             what():  /usr/include/ITK-4.10/itkImageToImageFilter.hxx:250:
+#  #           itk::ERROR: SymmetricLogDomainDemonsRegistrationFilterWithMaskExtension(0x7f2fc40dfdf0): Inputs do not occupy the same physical space!
+#  #           InputImage Origin: [-3.2500000e+02, -3.2500000e+02, -2.4200000e+02], InputImage_2 Origin: [-2.5000000e+02, -2.5000000e+02, -2.6075000e+02]
+#  #                   Tolerance: 1.2695310e-06
+#  #           InputImage Spacing: [1.2695310e+00, 1.2695310e+00, 1.2500000e+00], InputImage_2 Spacing: [9.7656202e-01, 9.7656202e-01, 6.2500000e-01]
+#  #                   Tolerance: 1.2695310e-06
+#  #           ...
+#  #       It is not clear what the source of this bug is, but the Plastimatch demons algorithm works without issue.
+#  ###################################################################################
+#  [STAGE]
+#  xform=vf
+#  impl=itk
+#  optim=demons
+#  background_max=-600
+#  
+#  #  Demons implementation that should be used:
+#  #    - fsf  (<--- the default),
+#  #    - diffeomorphic,
+#  #    - log_domain,
+#  #    - sym_log_domain
+#  optim_subtype=sym_log_domain
+#  
+#  #  Type of gradient that will be used to compute update force:
+#  #    - symmetric (i.e., compute gradient in fixed and moving image),
+#  #    - fixed,
+#  #    - warped_moving,
+#  #    - mapped_moving (i.e., not warped moving image).
+#  demons_gradient_type=symmetric
+#  
+#  #  Set whether the update field is smoothed (regularized). Smoothing the update field 
+#  #  yields a solution viscous in nature. If demons_smooth_update_field is on, then the
+#  #  update field is smoothed with a Gaussian whose standard deviations are specified 
+#  #  with demons_std_update_field.
+#  demons_smooth_update_field=0
+#  demons_std_update_field=1
+#  
+#  #  Set whether the deformation field should be smoothed (regularized). Smoothing the 
+#  #  deformation field yields a solution elastic in nature. If 
+#  #  demons_smooth_deformation_field is on, then the deformation field is smoothed with
+#  #  a Gaussian whose standard deviations are specified with demons_std_deformation_field.
+#  demons_smooth_deformation_field=1
+#  demons_std_deformation_field=2
+#  
+#  #  Set the maximum update step length. In Thirion this is 0.5. Setting it to 0 implies
+#  #  no restriction (beware of numerical instability in this case.
+#  demons_step_length=1;
+#  
+#  #  Flag to turn on/off histogram equalization.
+#  histo_equ=0
+#  
+#  #  Number of histogram levels used for histogram equalization.
+#  num_hist_levels=100
+#  
+#  #  Number of matching points used for histogram equalization.
+#  num_matching_points=10
+#  
+#  #  Flag to turn on/off threshold at mean intensity. If true, only source (reference) 
+#  #  pixels which are greater than the mean source (reference) intensity is used in the 
+#  #  histogram matching. If false, all pixels are used.
+#  thresh_mean_intensity=1
+#  
+#  #max_its=5
+#  max_its=100
+#  
+#  #res=2 2 1
+#  res=1 1 1
+#  
+#  #xform_out=stage_8_itk_demons.txt   #  <-- Nothing to write to txt file.
+#  #vf_out=stage_8_itk_demons_vf.nrrd
 
