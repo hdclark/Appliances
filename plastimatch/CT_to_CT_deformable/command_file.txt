@@ -12,6 +12,7 @@ moving=/moving/
 img_out=/outputs/
 img_out_fmt=dicom
 
+default_value=-4000
 
 
 ###################################################################################
@@ -21,8 +22,8 @@ img_out_fmt=dicom
 xform=align_center
 
 xform_out=/outputs/stage_1_align.txt
-
-
+  
+  
 ###################################################################################
 # Translation-only registration (3 DOF).
 ###################################################################################
@@ -30,11 +31,12 @@ xform_out=/outputs/stage_1_align.txt
 xform=translation
 optim=rsg
 metric=mi
+background_max=500
 
 #max_its=5
 max_its=1000
 
-res=4 4 2
+res=2 2 1 
 
 xform_out=/outputs/stage_2_translation.txt
 
@@ -42,10 +44,13 @@ xform_out=/outputs/stage_2_translation.txt
 ###################################################################################
 # Rigid registration (6 DOF).
 ###################################################################################
+# NOTE: This stage can introduce global 'twists' that cut off portions of image.
+###################################################################################
 [STAGE]
 xform=rigid
 optim=versor
 metric=mi
+background_max=-600
 
 #max_its=5
 max_its=1000
@@ -57,22 +62,25 @@ xform_out=/outputs/stage_3_rigid.txt
 #vf_out=/outputs/stage_3_rigid_vf.nrrd
 
 
-###################################################################################
-# Affine registration (12 DOF).
-###################################################################################
-[STAGE]
-xform=affine
-optim=rsg
-metric=mi
-
-#max_its=5
-max_its=1000
-
-#res=2 2 1
-res=1 1 1
-
-xform_out=/outputs/stage_4_affine.txt
-#vf_out=/outputs/stage_4_affine_vf.nrrd
+#  ###################################################################################
+#  # Affine registration (12 DOF).
+#  ###################################################################################
+#  # NOTE: This stage can introduce global 'twists' that cut off portions of image.
+#  ###################################################################################
+#  [STAGE]
+#  xform=affine
+#  optim=rsg
+#  metric=mi
+#  background_max=-600
+#  
+#  #max_its=5
+#  max_its=1000
+#  
+#  #res=2 2 1
+#  res=1 1 1
+#  
+#  xform_out=/outputs/stage_4_affine.txt
+#  #vf_out=/outputs/stage_4_affine_vf.nrrd
 
 
 #  ###################################################################################
@@ -82,6 +90,7 @@ xform_out=/outputs/stage_4_affine.txt
 #  xform=bspline
 #  impl=plastimatch
 #  metric=mi
+#  background_max=-600
 #  
 #  regularization_lambda=0.005
 #  #threading=openmp
@@ -97,28 +106,29 @@ xform_out=/outputs/stage_4_affine.txt
 #
   
   
-#  ###################################################################################
-#  # BSpline registration.
-#  ###################################################################################
-#  [STAGE]
-#  xform=bspline
-#  impl=plastimatch
-#  metric=mi
-#  
-#  regularization_lambda=0.005
-#  #threading=openmp
-#  
-#  #max_its=5
-#  max_its=50
-#  
-#  #res=4 4 2
-#  res=2 2 1
-#  #res=1 1 1
-#  
-#  # Note: the nrrd vector deformation field file is large!
-#  #vf_out=/outputs/stage_6_bspline_vf.nrrd
-#  xform_out=/outputs/stage_6_bspline.txt
-#  
+###################################################################################
+# BSpline registration.
+###################################################################################
+[STAGE]
+xform=bspline
+impl=plastimatch
+metric=mi
+background_max=-600
+
+regularization_lambda=0.005
+#threading=openmp
+
+#max_its=5
+max_its=100
+
+#res=4 4 2
+res=2 2 1
+#res=1 1 1
+
+# Note: the nrrd vector deformation field file is large!
+#vf_out=/outputs/stage_6_bspline_vf.nrrd
+xform_out=/outputs/stage_6_bspline.txt
+  
 
 
 ###################################################################################
@@ -128,15 +138,17 @@ xform_out=/outputs/stage_4_affine.txt
 xform=vf
 impl=plastimatch
 optim=demons
+background_max=-600
 
 #max_its=5
-max_its=50
+#max_its=100   # Probably sufficient for most purposes.
+max_its=200
 
 res=2 2 1
 #res=1 1 1
 
-#xform_out=stage_3_itk_demons.txt   #  <-- Nothing to write to txt file.
-#vf_out=stage_3_itk_demons_vf.mha
+#xform_out=stage_7_demons.txt   #  <-- Nothing to write to txt file.
+#vf_out=stage_7_demons_vf.nrrd
 
 
 
