@@ -1,0 +1,23 @@
+
+This directory contains a script that simplifies DICOM image volume registration. Written by Hal Clark in 2018.
+
+Invocation, in a nutshell, is like:
+
+./CT_to_CT_deformable/Launch_Registration.sh -r path/to/directory/containing/reference/DICOM/images/ \
+                                             -d path/to/directory/containing/deformable/DICOM/images/ \
+                                             -o path/for/output/files/ \
+                                             -c optional/path/to/override/default/plastimatch/command_file.txt
+
+The input images are mapped read-only to the registration process and are not altered.
+DICOM files should be at the top level in the provided directories and should end with '.dcm'.
+Output DICOM files copy select information from the deformable images (patient ID, dates, UID linkages).
+Additional output files contain information about each registration stage and a log of the whole process.
+
+For more info about the registration specifics, see the default command file 
+(./CT_to_CT_deformable/command_file.txt or similar).
+To override the default, it is easiest to start with the default.
+
+Note that even though CT-to-CT deformation is expected, the default registration here is meant to be used to co-register
+standard CTs with contrast-enhanced CTs. This is done by using mutual information rather than MSE. 
+In any case, the defaults can be easily overridden to support cross-modality registration.
+
