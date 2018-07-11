@@ -99,10 +99,13 @@ invocation+=(/resources/CT_to_CT_deformable/Driver.sh)
 printf '### Registering now ###\n' | sudo tee -a "$log_file"
 
 sudo "${invocation[@]}" 2>&1 | sudo tee -a "$log_file"
+sync 
 
 ###########################################################################################
 # Post-processing:
 printf '### Post-processing now ###\n' | sudo tee -a "$log_file"
 
 sudo chown --recursive hal:users "$outgoing_dir"/
+sync 
+
 

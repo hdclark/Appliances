@@ -29,6 +29,14 @@ RUN apt-get --yes update && \
       openssh-server \
       man-db \
       `# ` \
+      `# DCMTK binaries, development, and runtime libraries. ` \
+      dcmtk \
+      dcmtk-doc \
+      libdcmtk-dev \
+      libodil0 \
+      libodil0-dev \
+      libodil0-doc \
+      `# ` \
       `# Plastimatch stuff. ` \
       plastimatch
 
