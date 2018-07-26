@@ -27,6 +27,7 @@
 # Also, any directory ending in '_anon' will NOT be anonymized.
 
 parentdir="$@"
+parentdir=$( realpath "$parentdir" )
 if [ -z "$parentdir" ] ; then
     printf "No parent directory provided. Cannot continue.\n" 1>&2
     exit 1
