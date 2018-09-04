@@ -330,7 +330,7 @@ read -e -i "anon_$RANDOM$RANDOM" PatientID
 tagstomodify+=("(0010,0020)=${PatientID}") #     Patient ID                                                           
 
 printf "Study ID? (e.g., '1234')\n"
-read -e -i "$RANDOM$RANDOM" StudyID
+read -e -i "${RANDOM}0" StudyID
 tagstomodify+=("(0020,0010)=${StudyID}") #     Study ID                                                             
 
 printf "Patient's name? (e.g., 'Anonymous^Anonymous')\n"
@@ -601,7 +601,7 @@ for i in "${anondir}/"*dcm ; do
 done | 
   sed -e 's/^[ ]*//' -e 's/[ ]*$//' -e 's/  / /g' | 
   sort -u 
-) | less
+)
 
 
 # List the key UIDs for Dump all encountered tags in all files for inspection.
@@ -624,7 +624,7 @@ dcmdump "${anondir}/"* |
   grep -i 'Series.*UID\|Study.*UID\|Frame.*Ref.*UID' | 
   sed -e 's/^[ ]*//' -e 's/[ ]*$//' -e 's/  / /g' | 
   sort | uniq -c
-) | less
+)
 
 
 printf "Done\n"
