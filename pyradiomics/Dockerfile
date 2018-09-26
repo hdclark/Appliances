@@ -4,7 +4,7 @@ FROM debian:stable
 #FROM debian:unstable
 
 LABEL maintainer="http://www.halclark.ca" \
-      description="Containerized pylinac."
+      description="Containerized pyradiomics."
 
 EXPOSE 22/tcp \
        80/tcp    443/tcp \
@@ -29,13 +29,13 @@ RUN apt-get --yes update && \
       openssh-server \
       man-db \
       `# ` \
-      `# Python requirements. ` \
+      `# Python base. ` \
       python3 \
       python3-tk \
       python3-pip 
 
 RUN pip3 install \
-      pylinac \
+      pyradiomics \
       dicom \
       matplotlib
 
