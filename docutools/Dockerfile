@@ -46,6 +46,8 @@ RUN apt-get --yes update && \
       texlive-xetex \
       texlive-pstricks \
       texlive-pstricks-doc \
+      texlive-fonts-extra \
+      texlive-full \
       `# ` \
       `# Pandoc. ` \
       pandoc \
