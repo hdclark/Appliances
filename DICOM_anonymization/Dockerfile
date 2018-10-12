@@ -33,10 +33,11 @@ RUN apt-get --yes update && \
       `# ` \
       `# GDCM binaries, development, and runtime libraries. ` \
       gdcm-doc \
+      `# Note: The following package is out-of-date and possibly not needed.` \
+      `# python-gdcm` \
       libgdcm-cil \
       libgdcm-tools \
       libgdcm2-dev \
-      python-gdcm \
       `# ` \
       `# DCMTK binaries, development, and runtime libraries. ` \
       dcmtk \
