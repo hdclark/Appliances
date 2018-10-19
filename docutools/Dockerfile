@@ -37,6 +37,10 @@ RUN apt-get --yes update && \
       ghostscript-doc \
       `# ` \
       `# TeXlive stuff. ` \
+      `# ` \
+      `# Note: The following package results in a massive (7+ GB) container. ` \
+      `#       Enable if something out of the ordinary is needed.` \
+      `# texlive-full ` \
       texlive-latex-base \
       texlive-latex-base-doc \
       texlive-latex-extra \
@@ -47,7 +51,6 @@ RUN apt-get --yes update && \
       texlive-pstricks \
       texlive-pstricks-doc \
       texlive-fonts-extra \
-      texlive-full \
       `# ` \
       `# Pandoc. ` \
       pandoc \
