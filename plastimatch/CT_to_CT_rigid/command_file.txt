@@ -1,0 +1,64 @@
+
+# Driver file for Plastimatch. This file was written by Hal Clark on 20181030.
+#
+# See http://plastimatch.org/registration_command_file_reference.html for more info.
+#
+
+
+[GLOBAL]
+fixed=/fixed/
+moving=/moving/
+
+img_out=/outputs/
+img_out_fmt=dicom
+
+default_value=-4000
+
+
+###################################################################################
+# Align images at the centre (3 DOF).
+###################################################################################
+[STAGE]
+xform=align_center
+
+xform_out=/outputs/stage_1_align.txt
+  
+  
+###################################################################################
+# Translation-only registration (3 DOF).
+###################################################################################
+[STAGE]
+xform=translation
+optim=rsg
+metric=mi
+background_max=500
+
+#max_its=5
+max_its=1000
+
+res=2 2 1 
+
+xform_out=/outputs/stage_2_translation.txt
+
+
+###################################################################################
+# Rigid registration (6 DOF).
+###################################################################################
+# NOTE: This stage can introduce global 'twists' that cut off portions of image.
+###################################################################################
+[STAGE]
+xform=rigid
+optim=versor
+metric=mi
+background_max=-600
+
+#max_its=5
+max_its=1000
+
+#res=2 2 1
+res=1 1 1
+
+xform_out=/outputs/stage_3_rigid.txt
+#vf_out=/outputs/stage_3_rigid_vf.nrrd
+
+
