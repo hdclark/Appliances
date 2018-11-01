@@ -44,7 +44,7 @@ while getopts "hr:d:o:c:" opt; do
         ;;
     d)  deforming_dir=$(realpath "$OPTARG")
         ;;
-    o)  outgoing_dir=$(realpath "$OPTARG")
+    o)  outgoing_dir="$OPTARG"
         ;;
     c)  command_file=$(realpath "$OPTARG")
         ;;
@@ -65,7 +65,7 @@ if [ ! -d "$deforming_dir" ] ; then
     printf 'Deforming directory not accessible. Cannot continue.\n'
     exit 1
 fi
-if [ -d "$outgoing_dir" ] ; then
+if [ -d "${outgoing_dir}/" ] ; then  # Note: significant '/' -- protects against empty string.
     printf 'Outgoing directory already exists. Cannot continue.\n'
     exit 1
 fi
