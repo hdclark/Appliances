@@ -86,7 +86,12 @@ RUN apt-get --yes update && \
       r-cran-xtable \
       r-cran-yaml \
       r-cran-zoo \
-      r-doc-html
+      r-doc-html \
+      `# ` \
+      `# R package dependencies: tidyverse package. ` \
+      libcurl4-openssl-dev \
+      libssl-dev \
+      libxml2-dev
 
 # Install Firefox Fire fonts for plots that match Beamer's Metropolis theme.
 WORKDIR /extras
@@ -102,6 +107,15 @@ RUN wget 'https://github.com/mozilla/Fira/archive/master.zip' -O Fira.zip && \
       mv otf/* ttf/* /usr/local/share/fonts/ && \
       fc-cache && \
       cd / && rm -rf /extras
+
+# Install specific R packages not packaged in system package manager.
+#
+# Note: The DOCKER_CACHE_BREAKER declaration is meant to disable Docker caching so the script
+#       will be run afresh each time (i.e., the build will not be cached). Note that the build
+#       invocation needs to overwrite the argument. The cache can be retained by keeping
+#       DOCKER_CACHE_BREAKER as-is.
+ARG DOCKER_CACHE_BREAKER=1
+RUN /resources/scripts/install_r_packages.sh
 
 WORKDIR /scratch
 CMD ["/bin/bash", "/resources/Run_Default.sh"]

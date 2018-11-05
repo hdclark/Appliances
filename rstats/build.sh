@@ -22,6 +22,7 @@ time sudo docker build \
     -t "${image_basename}":"built_${build_datetime}" \
     -t "${image_basename}":"commit_${commit_id}_${clean_dirty}" \
     -t "${image_basename}":latest \
+    --build-arg DOCKER_CACHE_BREAKER="$(date +%s)" \
     -f ./Dockerfile \
     .
 
