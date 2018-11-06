@@ -1,6 +1,6 @@
 
-FROM debian:stable
-#FROM debian:testing
+#FROM debian:stable
+FROM debian:testing
 #FROM debian:unstable
 
 LABEL maintainer="http://www.halclark.ca" \

@@ -1,29 +1,25 @@
 #!/usr/bin/env r
 
-libloc <- '/usr/local/lib/R/site-library'  # See '.libPaths()' output.
-dir.create(libloc, showWarnings = FALSE, recursive = TRUE)
+# Install the rstats 'pacman' package manager.
+install.packages("pacman", 
+                 repos='http://cran.rstudio.com/',                             
+                 dependencies=T,                                               
+                 verbose=F, 
+                 quiet=T)
 
-for(package in c( "relaimpo",                                                                   
-                  "modeltools",                                                                 
-                  "strucchange",                                                                
-                  "party",                                                                      
-                  "nlstools",                                                                   
-                  "tidyverse",                                                                  
-                  "readxl" )){                                                                  
+library("pacman", 
+        character.only=T,
+        quietly=T,
+        verbose=F)
 
-    cat("==== Installing package", package, "as needed...\n")
-    if(!require(package, character.only=T, quietly=T, warn.conflicts=F, lib.loc=libloc)){   
-        install.packages(package, repos='http://cran.rstudio.com/',                             
-                                  dependencies=T,                                               
-                                  verbose=F, quiet=T, lib=libloc)                           
-        library(package, character.only=T, quietly=T, verbose=F, lib.loc=libloc)            
-
-        if(!require(package, character.only=T, quietly=T, warn.conflicts=F, lib.loc=libloc)){
-            cat("Unable to install package. Terminating with non-zero exit status.\n")
-            quit(save="no", status=1)
-        }
-    }                                                                                           
-}                                                                                               
+# Install other packages from the CRAN.
+p_install(relaimpo)
+p_install(modeltools)
+p_install(strucchange)
+p_install(party)
+p_install(nlstools)
+p_install(tidyverse)
+p_install(readxl)
 
 quit(save="no", status=0)
 
