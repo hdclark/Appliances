@@ -12,7 +12,8 @@ library("pacman",
         quietly=T,
         verbose=F)
 
-# Install other packages from the CRAN.
+# Install other packages from the CRAN as necessary.
+p_install(devtools)
 p_install(relaimpo)
 p_install(modeltools)
 p_install(strucchange)
