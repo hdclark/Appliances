@@ -21,6 +21,10 @@ p_install(party)
 p_install(nlstools)
 p_install(tidyverse)
 p_install(readxl)
+p_install(skimr)
+p_install(crayon)
+p_install(lme4)
+p_install(nlme)
 
 # Install the most up-to-date packages from GitHub.
 
