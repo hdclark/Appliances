@@ -65,6 +65,11 @@ RUN apt-get --yes update && \
       source-highlight \
       dot2tex \
       `# ` \
+      `# Libreoffice and related. ` \
+      `# Note: these pull in lots of dependencies (e.g., apparmor, openjdk, mesa, ...). ` \
+      `#    libreoffice ` \
+      `#    unoconv ` \
+      `# ` \
       `# Misc TeX-related tooling. ` \
       vim-latexsuite \
       texify \
