@@ -7,6 +7,7 @@ set -e
 sudo docker run \
     -it \
     --rm \
+    -p 2222:22 \
     -v "$(pwd)":/scratch/:rw \
     -w /scratch/ \
     "${image_basename}":latest \
