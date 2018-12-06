@@ -25,9 +25,19 @@ RUN apt-get --yes update && \
       screen \
       wget \
       `# ` \
-      `# FFmpeg ` \
+      `# FFmpeg. ` \
       ffmpeg \
-      ffmpeg-doc 
+      ffmpeg-doc \
+      `# ` \
+      `# Playback and conversion. ` \
+      mplayer \
+      mpv \
+      `# ` \
+      `# Misc other. ` \
+      atomicparsley \
+      libimage-exiftool-perl \
+      exiv2 \
+      youtube-dl 
 
 
 WORKDIR /scratch
