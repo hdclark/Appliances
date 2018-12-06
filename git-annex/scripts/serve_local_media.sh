@@ -2,7 +2,7 @@
 
 # This script provides git-annex accessible by ssh that serves everything in /media/.
 
-exposed_dir_root="/media/"
+exposed_dir_root="/media/sarah/"
 
 image_basename="git-annex"
 ssh_root_dir="${HOME}/.ssh/"
@@ -14,7 +14,7 @@ sudo docker run \
     `# ` \
     `# ` \
     `# Attach mutable state in /media.` \
-    -v "${exposed_dir_root}":"${exposed_dir_root}":rw \
+    -v "${exposed_dir_root}":/mnt/:rw \
     `# ` \
     `# ` \
     `# Inherit ssh credentials from the local host and expose the sshd service.` \
