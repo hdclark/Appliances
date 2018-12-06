@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script provides git-annex accessible by ssh that serves everything in /media/.
+# This script provides a git-annex accessible via ssh that serves everything within a given root directory.
 
 exposed_dir_root="/media/sarah/"
 
@@ -10,7 +10,10 @@ ssh_root_dir="${HOME}/.ssh/"
 set -e 
 
 sudo docker run \
-    -it --rm \
+    -dit \
+    --memory 16G \
+    --cpus 8 \
+    --restart always \
     `# ` \
     `# ` \
     `# Attach mutable state in /media.` \
@@ -21,6 +24,26 @@ sudo docker run \
     -p 2222:22 \
     -v "${ssh_root_dir}":/.ssh_prototype/:ro \
     `# ` \
+    --name gitannex_media \
     "${image_basename}":latest 
 
+#    --rm --it
+#    --entrypoint /bin/bash \
+
+
+printf "\n"
+printf "  Container launched.\n"
+printf "  To inspect stdout:\n"
+printf "      sudo docker logs gitannex_media\n"
+printf "  To stop/restart issue:\n"
+printf "      sudo docker container stop gitannex_media\n"
+printf "      sudo docker container start gitannex_media\n"
+printf "      sudo docker container restart gitannex_media\n"
+printf "  The container will persist between starting and stopping.\n"
+printf "  To take a snapshot the container as a new image issue:\n"
+printf "      sudo docker commit gitannex_media newname\n"
+printf "  To delete the image:\n"
+printf "      sudo docker container stop gitannex_media\n"
+printf "      sudo docker container rm gitannex_media\n"
+printf "\n"
 
