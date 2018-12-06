@@ -19,8 +19,8 @@ sudo docker run \
     `# ` \
     `# Inherit ssh credentials from the local host and expose the sshd service.` \
     -p 2222:22 \
-    -v "${ssh_root_dir}":/root/.ssh/:ro \
-    -v "${ssh_root_dir}":/home/hal/.ssh/:ro \
+    -v "${ssh_root_dir}":/.ssh_prototype/:ro \
     `# ` \
-    "${image_basename}":latest
+    "${image_basename}":latest 
+
 

@@ -29,24 +29,21 @@ RUN apt-get --yes update && \
       git-annex \
       magic-wormhole
 
-
 # Setup a non-authentication sshd.
-RUN sed -i -e 's/^[#]*PermitRootLogin.*/PermitRootLogin yes/' \
-           -e 's/^[#]*Port.*/Port 22/' \
-           -e 's/^[#]*PermitEmptyPasswords.*/PermitEmptyPasswords yes/' \
-           -e 's/^[#]*UsePAM.*/UsePAM yes/' \
+RUN sed -i \
+      -e 's/^[#]*Port.*/Port 22/' \
+      -e 's/^[#]*PasswordAuthentication.*/PasswordAuthentication no/' \
+      -e 's/^[#]*PubkeyAuthentication.*/PubkeyAuthentication yes/' \
+      -e 's/^[#]*PermitEmptyPasswords.*/PermitEmptyPasswords no/' \
+      -e 's/^[#]*PermitRootLogin.*/PermitRootLogin prohibit-password/' \
+      -e 's/^[#]*UsePAM.*/UsePAM yes/' \
+      -e 's/^[#]*StrictModes.*/StrictModes no/' \
     /etc/ssh/sshd_config
 
-
 # Create a non-root user, but do not default to it so we can launch sshd with root.
-RUN ( groupadd --gid 985 --non-unique users 2>/dev/null || \
-      groupmod --gid 985 --non-unique users 2>/dev/null ) && \
+RUN ( groupadd --gid 1000 --non-unique users 2>/dev/null || \
+      groupmod --gid 1000 --non-unique users 2>/dev/null ) && \
     useradd -m -s /bin/bash -u 1000 -g users hal
-
-# Disable the password so we can login without credentials.
-#
-# NOTE: This is convenient for local-only installations, but dangerous!
-#RUN passwd -d hal # No password!
 
 WORKDIR /scratch
 CMD ["/bin/bash", "/resources/Run_Default.sh"]
