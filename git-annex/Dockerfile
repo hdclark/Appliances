@@ -45,6 +45,16 @@ RUN ( groupadd --gid 1000 --non-unique users 2>/dev/null || \
       groupmod --gid 1000 --non-unique users 2>/dev/null ) && \
     useradd -m -s /bin/bash -u 1000 -g users hal
 
+# Configure ssh connections.
+RUN mkdir -p /home/hal/.ssh/sockets && \
+    cat " \
+    Host * \
+        ControlMaster auto \
+        ControlPath ~/.ssh/sockets/%r@%h-%p \
+        ControlPersist 4h \
+    " > /home/hal/.ssh/config && \
+    chown --recursive hal:users /home/hal/.ssh
+
 WORKDIR /scratch
 CMD ["/bin/bash", "/resources/Run_Default.sh"]
 
