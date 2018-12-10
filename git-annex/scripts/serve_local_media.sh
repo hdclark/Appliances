@@ -12,7 +12,8 @@ ssh_root_dir="${HOME}/.ssh/"
 DNS_ARGS=()
 while read -r -u 9 url ; do
     DNS_ARGS+=("--dns ${url}")
-done 9< <( sed -n -e 's/^nameserver //p' /etc/resolv.conf ; 
+done 9< <( printf '192.168.1.1\n' ; #  <--- Ugly hack!
+           sed -n -e 's/^nameserver //p' /etc/resolv.conf ; 
            printf '8.8.8.8\n8.8.4.4\n' 
          )
 
