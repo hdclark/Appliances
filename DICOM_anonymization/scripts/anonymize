@@ -449,7 +449,7 @@ for i in * ; do
     files=("${i}")
     tags=(Modality)
     modality=$( get_keyvalue files tags )
-    if [[ "$modality" =~ ^(CT|MR|RTSTRUCT|RTIMAGE|REG|RTPLAN|RTDOSE|RTRECORD|MOTIONMTWAVEFORM)$ ]] ; then
+    if [[ "$modality" =~ ^(CT|MR|PT|RTSTRUCT|RTIMAGE|REG|RTPLAN|RTDOSE|RTRECORD|MOTIONMTWAVEFORM)$ ]] ; then
         ln -s "$(pwd)/${i}"  "${WORKDIR}/${i}"
     else
         printf -- "Ignoring file '${i}'.\n" 2>&1
