@@ -7,6 +7,16 @@ exposed_dir_root="/media/sarah/"
 image_basename="git-annex"
 ssh_root_dir="${HOME}/.ssh/"
 
+
+# Scrape local DNS nameservers for use in the container.
+DNS_ARGS=()
+while read -r -u 9 url ; do
+    DNS_ARGS+=("--dns ${url}")
+done 9< <( printf '192.168.1.1\n' ; #  <--- Ugly hack!
+           sed -n -e 's/^nameserver //p' /etc/resolv.conf ; 
+           printf '8.8.8.8\n8.8.4.4\n' 
+         )
+
 set -e 
 
 sudo docker run \
@@ -18,6 +28,9 @@ sudo docker run \
     `# ` \
     `# Attach mutable state in /media.` \
     -v "${exposed_dir_root}":/mnt/:rw \
+    `# ` \
+    `# Ensure the local DNS (including LAN addresses) are honoured.` \
+    ${DNS_ARGS[@]} \
     `# ` \
     `# ` \
     `# Inherit ssh credentials from the local host and expose the sshd service.` \
