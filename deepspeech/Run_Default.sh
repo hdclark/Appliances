@@ -26,7 +26,14 @@ deepspeech -h
 
 
 find ./ -mindepth 1 -maxdepth 1 -type f \
-  \( -iname '*ogg' -o -iname '*opus' -o -iname '*mp3' -o -iname '*flac' \) \
+  \(    -iname '*ogg' \
+     -o -iname '*opus' \
+     -o -iname '*mp3' \
+     -o -iname '*flac' \
+     -o \(       -iname '*wav'  \
+           -a \! -iname '*_FOR_RECOGNITION.wav' \
+         \) \
+  \) \
   -exec ffmpeg -i '{}' \
                -sample_fmt s16 \
                -ar 16000 \
