@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script launches a plastimatch Docker container to perform a deformable image registration.
+# This script launches a plastimatch Docker container to perform a rigid image registration.
 #
 # NOTE: DICOM metadata may not be consistent. Post-processing may be needed!
 
@@ -16,6 +16,7 @@ reference_dir=""  # The input directory containing DICOM files which are treated
 deforming_dir=""  # The input directory containing DICOM files to be deformed.
 outgoing_dir=""   # The destination directory for registered files.
 command_file=""   # A Plastimatch command file to use rather than the default.
+driver_file=""    # A driver script to use rather than the default.
 
 
 # Default to use a bundled command file iff available.
@@ -28,7 +29,7 @@ fi
 
 # Argument parsing:
 OPTIND=1 # Reset in case getopts has been used previously in the shell.
-while getopts "hr:d:o:c:" opt; do
+while getopts "hr:d:o:c:s:" opt; do
     case "$opt" in
     h)
         printf 'This script invokes a Plastimatch Docker container to register DICOM images.\n' 
@@ -37,6 +38,7 @@ while getopts "hr:d:o:c:" opt; do
         printf               " -o 'Registered_images/'"
         printf '\n\n'
         printf 'Optional: -c override_command_file.txt'
+        printf 'Optional: -s override_driver.sh'
         printf '\n\n'
         exit 0
         ;;
@@ -47,6 +49,8 @@ while getopts "hr:d:o:c:" opt; do
     o)  outgoing_dir="$OPTARG"
         ;;
     c)  command_file=$(realpath "$OPTARG")
+        ;;
+    s)  driver_file=$(realpath "$OPTARG")
         ;;
     esac
 done
@@ -71,6 +75,10 @@ if [ -d "${outgoing_dir}/" ] ; then  # Note: significant '/' -- protects against
 fi
 if [ ! -z "$command_file" ] && [ ! -f "$command_file" ] ; then
     printf 'Cannot access command file. Cannot continue.\n'
+    exit 1
+fi
+if [ ! -z "$driver_file" ] && [ ! -f "$driver_file" ] ; then
+    printf 'Cannot access driver file. Cannot continue.\n'
     exit 1
 fi
 
@@ -99,8 +107,16 @@ if [ ! -z "$command_file" ] ; then
     invocation+=(-v)
     invocation+=("$command_file":/command_file.txt:ro)
 fi
+if [ ! -z "$driver_file" ] ; then
+    invocation+=(-v)
+    invocation+=("$driver_file":/Driver.sh:ro)
+fi
 invocation+=(plastimatch:latest)
-invocation+=(/resources/CT_to_CT_deformable/Driver.sh)
+if [ ! -z "$driver_file" ] ; then
+    invocation+=(/Driver.sh)
+else
+    invocation+=(/resources/CT_to_CT_rigid/Driver.sh)
+fi
 
 
 ###########################################################################################
