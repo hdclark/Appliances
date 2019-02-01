@@ -9,11 +9,16 @@
 fixed=/fixed/
 moving=/moving/
 
-img_out=/outputs/
-img_out_fmt=dicom
-
+# The value to use if the image cannot be sampled correctly.
 default_value=-4000
 
+# Final outputs after all stages have concluded.
+img_out=/outputs/
+img_out_fmt=dicom
+#img_out_type=float
+
+xform_out=/outputs/final_deformable.txt
+vf_out=/outputs/final_deformable.mha
 
 ###################################################################################
 # Align images at the centre (3 DOF).
