@@ -12,7 +12,9 @@ printf -- "${image_basename} container artifacts going to: ${artifacts_dir}\n" 1
 sudo docker run \
     -it \
     --rm \
+    -v "$(pwd)":/working/:rw \
     -v "${artifacts_dir}":/artifacts/:rw \
+    -w /working/ \
     "${image_basename}":latest \
     $@
 
