@@ -11,7 +11,7 @@
 
 
 # Variables, which must all be set by the input arguments:
-deforming_dir=""  # The input directory containing DICOM files to be deformed/warped.
+deforming_dir=""  # The input directory containing DICOM files (or a single file) to be deformed/warped.
 outgoing_dir=""   # The destination directory for warped files.
 transform_file="" # A Plastimatch transformation file, typically in MHA format.
 driver_file=""    # A driver script to use rather than the default.
@@ -24,7 +24,7 @@ while getopts "hd:o:t:s:" opt; do
     h)
         printf 'This script invokes a Plastimatch Docker container to warp DICOM RTDOSE images.\n' 
         printf '\n\n'
-        printf "Usage: \n\t $0 -d 'Deformable_images/'" 
+        printf "Usage: \n\t $0 -d 'Deformable_images/' (or -d afile.dcm)" 
         printf               " -t 'Transformation.mha'"
         printf               " -o 'Warped/'"
         printf '\n\n'
@@ -49,7 +49,7 @@ done
 
 ###########################################################################################
 # Argument sanity-checking:
-if [ ! -d "$deforming_dir" ] ; then
+if [ ! -d "$deforming_dir" ] && [ ! -f "$deforming_dir" ] ; then
     printf 'Deforming directory not accessible. Cannot continue.\n'
     exit 1
 fi
@@ -83,8 +83,13 @@ invocation+=(-it)
 invocation+=(--rm)
 invocation+=(-v)
 invocation+=("$transform_file":/transform.mha:ro)
-invocation+=(-v)
-invocation+=("$deforming_dir":/moving/:ro)
+if [ -d "$deforming_dir" ] ; then
+    invocation+=(-v)
+    invocation+=("$deforming_dir":/moving/:ro)
+elif [ -f "$deforming_dir" ] ; then
+    invocation+=(-v)
+    invocation+=("$deforming_dir":/moving/in.dcm:ro)
+fi
 invocation+=(-v)
 invocation+=("$outgoing_dir":/outputs/:rw)
 if [ ! -z "$driver_file" ] ; then

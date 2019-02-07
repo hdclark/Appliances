@@ -6,7 +6,7 @@
 printf '#### Invoking plastimatch now. ####\n'
 
 #plastimatch warp --input-dose-img RD.1.2.246.352.71.7.678578880832.14167727.20181228134456.dcm --output-dicom out --xf final_rigid.mha
-find -mindepth 1 -maxdepth 1 /moving/ -type f -exec \
+find /moving/ -mindepth 1 -maxdepth 1 -type f -exec \
   plastimatch warp --input '{}' --output-dicom /outputs/ --xf /transform.mha \; \
   -printf '\n\n\n'
 
