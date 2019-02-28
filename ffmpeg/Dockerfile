@@ -32,6 +32,7 @@ RUN apt-get --yes update && \
       `# Playback and conversion. ` \
       mplayer \
       mpv \
+      sox \
       `# ` \
       `# Misc other. ` \
       atomicparsley \
