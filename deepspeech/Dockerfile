@@ -28,6 +28,7 @@ RUN apt-get --yes update && \
       `# FFmpeg. ` \
       ffmpeg \
       ffmpeg-doc \
+      sox \
       `# ` \
       `# Python. ` \
       python3 \
@@ -41,9 +42,10 @@ WORKDIR /deepspeech
 RUN pip3 install deepspeech
 
 #RUN wget https://github.com/mozilla/DeepSpeech/releases/download/v0.1.1/deepspeech-0.1.1-models.tar.gz
-RUN  wget https://github.com/mozilla/DeepSpeech/releases/download/v0.4.0/deepspeech-0.4.0-models.tar.gz && \
-       tar xvfz deepspeech-0.4.0-models.tar.gz && \
-       rm deepspeech-0.4.0-models.tar.gz
+#RUN  wget https://github.com/mozilla/DeepSpeech/releases/download/v0.4.0/deepspeech-0.4.0-models.tar.gz && \
+RUN wget https://github.com/mozilla/DeepSpeech/releases/download/v0.4.1/deepspeech-0.4.1-models.tar.gz && \
+       tar xvfz deepspeech-0.4.1-models.tar.gz && \
+       rm deepspeech-0.4.1-models.tar.gz
 
 
 WORKDIR /scratch
