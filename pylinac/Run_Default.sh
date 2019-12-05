@@ -26,7 +26,7 @@
 #export DISPLAY=:1
 
 # Run a service or perform an operation.
-pylinac --help
+python3 Analyze_Log.py
 
 ## Clean up, if necessary (usually not).
 #kill $xpid

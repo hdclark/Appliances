@@ -2,24 +2,28 @@
 
 image_basename="pylinac"
 
-set -e 
+set -eu
 
-artifacts_dir="${HOME}/${image_basename}_container_artifacts/"
-mkdir -p "${artifacts_dir}"
-
-printf -- "${image_basename} container artifacts going to: ${artifacts_dir}\n" 1>&2
+#export l_UID="$(id -u)"
+#export l_GID="$(id -g)"
+#export l_USER="$USER"
 
 sudo docker run \
     -it \
     --rm \
-    -v "${artifacts_dir}":/artifacts/:rw \
+    --network=host \
+    -v "$(pwd):$(pwd):rw" \
+    -v "/tmp/":"/tmp/":rw \
+    -w "$(pwd)" \
     "${image_basename}":latest \
     $@
 
-#    -p 8080:80 \
-#    --entrypoint /bin/bash \
+    #-v         "...":"/usr/local/lib/python3.7/dist-packages/pylinac/demo_files/Tlog.bin":ro \
+    #-v "/tmp/in.dlg":"/usr/local/lib/python3.7/dist-packages/pylinac/demo_files/AQA.dlg":ro \
+    #--user $l_UID:$l_GID \
+    #--workdir="/home/$l_USER" \
+    #--volume="/etc/group:/etc/group:ro" \
+    #--volume="/etc/passwd:/etc/passwd:ro" \
+    #--volume="/etc/shadow:/etc/shadow:ro" \
 
-
-rmdir "${artifacts_dir}" &>/dev/null || \
-    printf -- "${image_basename} container artifacts remain in ${artifacts_dir}\n" 1>&2
 
