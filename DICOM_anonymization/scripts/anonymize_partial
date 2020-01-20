@@ -8,11 +8,57 @@
 #
 # Note: The input must be in a directory at the top-level.
 #
-# Note: This program is interactive!
+# Note: This program is interactive but will use command-line parameters if provided.
 #
 # Note: This program is ad-hoc and does not fully conform to the DICOM standard.
 #       Use at your own risk.
 #
+
+PatientID=""
+StudyID=""
+PatientsName=""
+StudyDesc=""
+SeriesDesc=""
+
+PatientIDProvided=""  # Non-empty if provided by a command-line argument.
+StudyIDProvided=""
+PatientsNameProvided=""
+StudyDescProvided=""
+SeriesDescProvided=""
+
+thedir=""
+
+###########################################################################################
+# Argument parsing
+###########################################################################################
+OPTIND=1 # Reset in case getopts has been used previously in the shell.
+while getopts "hp:s:n:t:e:" opt; do
+    case "$opt" in
+    h)
+        printf 'This script anonymizes a directory of DICOM files.\n'
+        printf 'Providing any arguments will disable interactive polling for the parameter later.\n'
+        printf 'Note that any parameters not provided will result in interactive polling.\n'
+        printf "Usage: \n\t $0 -p 'patient_ID' -s 'study_id' -n 'patient_name' -t 'study_desc' -e 'series_desc' dicom_dir/\n\n"
+        exit 1
+        ;;
+    p)  PatientIDProvided="yes"
+        PatientID="${OPTARG}"
+        ;;
+    s)  StudyIDProvided="yes"
+        StudyID="${OPTARG}"
+        ;;
+    n)  PatientsNameProvided="yes"
+        PatientsName="${OPTARG}"
+        ;;
+    t)  StudyDescProvided="yes"
+        StudyDesc="${OPTARG}"
+        ;;
+    e)  SeriesDescProvided="yes"
+        SeriesDesc="${OPTARG}"
+        ;;
+    esac
+done
+shift $(( OPTIND - 1 ))  # Purge all consumed options to the left of the first non-option token.
 
 thedir="$@"
 if [ ! -d "$thedir" ] ; then
@@ -322,35 +368,45 @@ tagstomodify+=("(0040,A123)=Anonymous") #     Person Name
 tagstomodify+=("(300E,0008)=Anonymous") #     Reviewer Name
 
 printf "\n"
-printf "You will now be prompted for info to imbue the files with.\n"
+printf "You may now be prompted for info to imbue the files with.\n"
 printf "\n"
 
-printf "Patient ID? (e.g., 'anon_1234')\n"
-read -e -i "anon_$RANDOM$RANDOM" PatientID
+if [ -z "${PatientIDProvided}" ] ; then 
+    printf "Patient ID? (e.g., 'anon_1234')\n"
+    read -e -i "anon_$RANDOM$RANDOM" PatientID
+fi
 tagstomodify+=("(0010,0020)=${PatientID}") #     Patient ID                                                           
 
-printf "Study ID? (e.g., '1234')\n"
-read -e -i "${RANDOM}0" StudyID
+if [ -z "${StudyIDProvided}" ] ; then 
+    printf "Study ID? (e.g., '1234')\n"
+    read -e -i "${RANDOM}0" StudyID
+fi
 tagstomodify+=("(0020,0010)=${StudyID}") #     Study ID                                                             
 
-printf "Patient's name? (e.g., 'Anonymous^Anonymous')\n"
-read -e -i "${PatientID}^${PatientID}" PatientsName
+if [ -z "${PatientsNameProvided}" ] ; then 
+    printf "Patient's name? (e.g., 'Anonymous^Anonymous')\n"
+    read -e -i "${PatientID}^${PatientID}" PatientsName
+fi
 tagstomodify+=("(0010,0010)=${PatientsName}") #     Patient's Name                                                       
 
-printf "Study description? (e.g., 'Research study for X.').\n"
-printf "    Note: No quotes are needed.\n"
-printf "    Note: Leave empty to leave existing tag(s) as-is.\n"
-read StudyDesc
-if [ ! -z "$StudyDesc" ] ; then
+if [ -z "${StudyDescProvided}" ] ; then 
+    printf "Study description? (e.g., 'Research study for X.').\n"
+    printf "    Note: No quotes are needed.\n"
+    printf "    Note: Leave empty to leave existing tag(s) as-is.\n"
+    read StudyDesc
+fi
+if [ ! -z "${StudyDesc}" ] ; then
     tagstomodify+=("(0008,1030)=${StudyDesc}") #     Study Description                                                    
 fi
 
-printf "Series description? (e.g., 'Research scan for Y.').\n"
-printf "    Note: No quotes are needed.\n"
-printf "    Note: Leave empty to leave existing tag(s) as-is.\n"
-printf "    Note: Setting this option will cause all (possibly different) descriptions to be overwritten.\n"
-read SeriesDesc
-if [ ! -z "$SeriesDesc" ] ; then
+if [ -z "${SeriesDescProvided}" ] ; then 
+    printf "Series description? (e.g., 'Research scan for Y.').\n"
+    printf "    Note: No quotes are needed.\n"
+    printf "    Note: Leave empty to leave existing tag(s) as-is.\n"
+    printf "    Note: Setting this option will cause all (possibly different) descriptions to be overwritten.\n"
+    read SeriesDesc
+fi
+if [ ! -z "${SeriesDesc}" ] ; then
     tagstomodify+=("(0008,103E)=${SeriesDesc}") #     Series Description                                                    
 fi       
 
@@ -480,7 +536,7 @@ done
 #apasswd=$( openssl rand -base64 128 | head -c 64 )
 #gdcmanon -r --continue -p "${apasswd}" -V -i "${WORKDIR}" -o "${anondir}"/
 # OR, you can fallback (without any anonymization) to:
-rsync -avPL "${WORKDIR}/" "${anondir}/"
+rsync -avPLz "${WORKDIR}/" "${anondir}/"
 
 
 
