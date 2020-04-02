@@ -1,5 +1,8 @@
 #!/bin/bash
 
+script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}" )" )"
+cd "${script_dir}"
+
 if [ ! -d /tmp/tlogs ] ; then
     printf 'Create "/tmp/tlogs/" and place trajectory log files (*.bin) inside before proceeding.\n' 2>&1
     exit 1
