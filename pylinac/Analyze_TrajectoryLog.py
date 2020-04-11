@@ -1,13 +1,13 @@
 
 from pylinac import load_log, MachineLogs
 
-import matplotlib
+#import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
+#import numpy as np
 
 path_to_folder = "/tmp/tlogs/"
 
-logs = MachineLogs(path_to_folder)
+#logs = MachineLogs(path_to_folder)
 logs = load_log(path_to_folder)
 
 i = 0
