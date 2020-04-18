@@ -5,8 +5,14 @@ LABEL maintainer="http://www.halclark.ca" \
       description="Containerized Nix, with some development tools preinstalled."
 
 
+## Specific stable channel. Note that there is no unspecific 'latest' channel.
+#RUN nix-channel --add 'https://nixos.org/channels/nixos-20.03' nixpkgs && \
+#    nix-channel --update
+
+# Latest unstable channel.
 RUN nix-channel --add 'https://nixos.org/channels/nixpkgs-unstable' nixpkgs && \
     nix-channel --update
+
 
 #RUN nix-shell ...
 #RUN nix-build ...
