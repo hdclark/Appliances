@@ -44,8 +44,8 @@ groupadd -g ${gid} -f ${gname} || true
 useradd -g ${gname} -u ${uid} -G video -m -d '/home/container_${uname}' -s /bin/bash ${uname}
 
 # Copy host Xauth file.
-cp /etc/Xauthority_prototype /home/container_${uname}/.Xauthority
-chown ${uname}:${gname} /home/container_${uname}/.Xauthority
+cp /etc/Xauthority_prototype /home/container_${uname}/.Xauthority || true
+chown ${uname}:${gname} /home/container_${uname}/.Xauthority || true
 
 # Install additional packages.
 #apt-get -y update
@@ -89,9 +89,8 @@ sudo \
     -v "${internal_run_script}":/x11_launch_script.sh:ro \
     \
     `# Map various locations from host into the container prospectively. ` \
-    -v /media/:/media/:ro \
-    -v /media/sf_U_DRIVE/Profile/Desktop:/home/${uname}/Desktop/:ro \
     -v /:/host_root/:ro \
+    -v /media/:/media/:ro \
     -v "$(pwd)":/start/:rw \
     -w /start/ \
     \
