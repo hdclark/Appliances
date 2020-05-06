@@ -6,9 +6,19 @@ RUN sed -i -e 's/^[#]*SigLevel[ \t]*=.*/SigLevel = Never/g' \
            -e 's/^[#]*RemoteFileSigLevel[ \t]*=.*/RemoteFileSigLevel = Never/g' /etc/pacman.conf && \
     pacman -Syu --noconfirm --needed \
       git \
+      vim \
       xorg-server \
+      xorg-apps \
+      xf86-video-vesa \
       xf86-video-fbdev \
+      xf86-video-intel \
+      xf86-video-nouveau \
+      xf86-video-ati \
+      xf86-video-amdgpu \
+      mesa \
       retroarch \
+      retroarch-assets-xmb \
+      retroarch-assets-ozone \
       libretro && \
     rm -f /var/cache/pacman/pkg/*
 
@@ -37,6 +47,6 @@ RUN sed -i -e 's/^[#]*SigLevel[ \t]*=.*/SigLevel = Never/g' \
 #
 
 WORKDIR /scratch
-CMD ["/bin/retroarch"]
+CMD ["/usr/bin/retroarch"]
 
 

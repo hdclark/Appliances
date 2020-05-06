@@ -41,7 +41,7 @@ cat > "${internal_run_script}" <<EOF
 
 # Create a user with the same credentials as the host user.
 groupadd -g ${gid} -f ${gname} || true
-useradd -g ${gname} -u ${uid} -G video -m -d '/home/container_${uname}' -s /bin/bash ${uname}
+useradd -g ${gname} -u ${uid} -G video,input -m -d '/home/container_${uname}' -s /bin/bash ${uname}
 
 # Copy host Xauth file.
 cp /etc/Xauthority_prototype /home/container_${uname}/.Xauthority || true
@@ -51,8 +51,14 @@ chown ${uname}:${gname} /home/container_${uname}/.Xauthority || true
 #apt-get -y update
 #apt-get -y install firefox-esr
 
-#
-printf 'export PS1="${uname}@container> "\n' >> /home/${uname}/.bashrc
+# Reconfigure specific packages.
+printf 'autosave_interval = "600"\n' >> /etc/retroarch.cfg
+mkdir -p /home/container_${uname}/.config/retroarch/
+printf '#include "/etc/retroarch.cfg"\n' >> /home/container_${uname}/.config/retroarch/retroarch.cfg
+chown -R ${uname}:${gname} /home/container_${uname}/.config
+
+# Add visual cue that we're in a container.
+printf 'export PS1="${uname}@container> "\n' >> /home/container_${uname}/.bashrc
 
 # Pass-through any arguments sent to the run script (not this script, the script that created this script).
 all_args='$@'
@@ -83,9 +89,10 @@ sudo \
     `# -v /tmp/.X11-unix:/tmp/.X11-unix:rw ` \
     -v /tmp/:/tmp/:rw \
     -v "$HOME"/.Xauthority:/etc/Xauthority_prototype:ro \
-    -v /dev/null:/dev/input/js0:ro \
-    -v /dev/null:/dev/input/js1:ro \
-    -v /dev/null:/dev/input/js2:ro \
+    -v /dev/input/js0:/dev/input/js0:rw \
+    -v /dev/input/js1:/dev/input/js1:rw \
+    -v /dev/input/js2:/dev/input/js2:rw \
+    -v /dev/input/js3:/dev/input/js3:rw \
     -v "${internal_run_script}":/x11_launch_script.sh:ro \
     \
     `# Map various locations from host into the container prospectively. ` \
