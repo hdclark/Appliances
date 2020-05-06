@@ -6,7 +6,7 @@ RUN sed -i -e 's/^[#]*SigLevel[ \t]*=.*/SigLevel = Never/g' \
            -e 's/^[#]*RemoteFileSigLevel[ \t]*=.*/RemoteFileSigLevel = Never/g' /etc/pacman.conf && \
     pacman -Syu --noconfirm --needed \
       git \
-      xorg-xserver \
+      xorg-server \
       xf86-video-fbdev \
       retroarch \
       libretro && \
