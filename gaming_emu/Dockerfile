@@ -1,13 +1,13 @@
 
 FROM archlinux/base
 
-#RUN pacman-key --populate && \
-#RUN pacman-key --refresh-keys && \
-#    pacman -Sy --noconfirm archlinux-keyring && \
-RUN sed -i -e 's/^SigLevel[ \t]*=.*/SigLevel = TrustAll/g' /etc/pacman.conf && \
+RUN sed -i -e 's/^[#]*SigLevel[ \t]*=.*/SigLevel = Never/g' \
+           -e 's/^[#]*LocalFileSigLevel[ \t]*=.*/LocalFileSigLevel = Never/g' \
+           -e 's/^[#]*RemoteFileSigLevel[ \t]*=.*/RemoteFileSigLevel = Never/g' /etc/pacman.conf && \
     pacman -Syu --noconfirm --needed \
-      base-devel \
       git \
+      xorg-xserver \
+      xf86-video-fbdev \
       retroarch \
       libretro && \
     rm -f /var/cache/pacman/pkg/*
