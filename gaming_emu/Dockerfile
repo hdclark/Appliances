@@ -19,7 +19,8 @@ RUN sed -i -e 's/^[#]*SigLevel[ \t]*=.*/SigLevel = Never/g' \
       retroarch \
       retroarch-assets-xmb \
       retroarch-assets-ozone \
-      libretro && \
+      libretro \
+      joyutils && \
     rm -f /var/cache/pacman/pkg/*
 
 

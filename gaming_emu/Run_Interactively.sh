@@ -50,6 +50,7 @@ chown ${uname}:${gname} /home/container_${uname}/.Xauthority || true
 # Install additional packages.
 #apt-get -y update
 #apt-get -y install firefox-esr
+#pacman -S --noconfirm xyz
 
 # Reconfigure specific packages.
 printf 'autosave_interval = "600"\n' >> /etc/retroarch.cfg
@@ -89,10 +90,11 @@ sudo \
     `# -v /tmp/.X11-unix:/tmp/.X11-unix:rw ` \
     -v /tmp/:/tmp/:rw \
     -v "$HOME"/.Xauthority:/etc/Xauthority_prototype:ro \
-    -v /dev/input/js0:/dev/input/js0:rw \
-    -v /dev/input/js1:/dev/input/js1:rw \
-    -v /dev/input/js2:/dev/input/js2:rw \
-    -v /dev/input/js3:/dev/input/js3:rw \
+    `# Pass-through joysticks (i.e., gamepad devices) iff they exist on the host. ` \
+    $( [ -c /dev/input/js0 ] && printf -- '--device=/dev/input/js0' ) \
+    $( [ -c /dev/input/js1 ] && printf -- '--device=/dev/input/js1' ) \
+    $( [ -c /dev/input/js2 ] && printf -- '--device=/dev/input/js2' ) \
+    $( [ -c /dev/input/js3 ] && printf -- '--device=/dev/input/js3' ) \
     -v "${internal_run_script}":/x11_launch_script.sh:ro \
     \
     `# Map various locations from host into the container prospectively. ` \
