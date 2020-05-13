@@ -1,0 +1,87 @@
+
+FROM centos:centos6.6
+
+LABEL maintainer="http://www.halclark.ca" \
+      description="An EGSnrc appliance."
+
+#EXPOSE 80
+#EXPOSE 443
+
+WORKDIR /scratch
+ADD . /scratch
+
+
+# Install core build dependencies.
+RUN yum -y update && \
+    yum clean all && \
+    yum -y install \
+      git \
+      make \
+      cmake \
+      gcc \
+      gcc-c++ \
+      gcc-gfortran \
+      vim \
+      gdb \
+      rsync
+
+# Install other dependencies.
+RUN yum -y install \
+    ` # EGSnrc dependencies. ` \
+        tcl \
+        tk \
+        qt \
+        qt-devel \
+        at \
+        expect \
+    ` # Software X server that provides OpenGL extensions.` \
+        xorgproto \
+        xorg-x11-docs \
+        xorg-x11-drivers \
+        xorg-x11-font-utils \
+        xorg-x11-fonts \
+        xorg-x11-server \
+        xorg-x11-server-utils \
+        xorg-x11-util-macros \
+        xorg-x11-xkb-utils \
+        mesa
+
+
+# Needed for the software X server.
+RUN mv xpra-xorg.conf /etc/X11/xorg.conf
+
+
+# Source and configure EGSnrc.
+#ENV HEN_HOUSE ""
+#ENV EGS_HOME ""
+#ENV EGS_CONFIG ""
+WORKDIR /egsnrc
+RUN git clone --progress https://github.com/nrc-cnrc/EGSnrc.git . && \
+    ./HEN_HOUSE/scripts/configure.expect linux.conf 1
+ENV EGS_HOME "/egsnrc/egs_home/"
+ENV EGS_CONFIG "/egsnrc/HEN_HOUSE/specs/linux.conf"
+#ENV HEN_HOUSE "/egsnrc/HEN_HOUSE/"
+RUN . /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions
+RUN printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /etc/profile
+RUN printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /etc/bash.bashrc
+RUN printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /root/.bashrc
+
+
+# Build the GUI tools.
+ENV QTDIR "/usr"
+RUN ln -s /usr/bin/qmake-qt4 /usr/bin/qmake
+## Note: The following fails due to 'Cannot find file: /egsnrc/HEN_HOUSE/gui/egs_configure/egs_configure.pro'
+##       Likely missing dependencies, but I'm not sure which.
+#RUN cd /egsnrc/HEN_HOUSE/gui/        && make -j $(nproc) --print-directory && \
+#    cd /egsnrc/HEN_HOUSE/egs++/view/ && make -j $(nproc) --print-directory
+
+
+# Run the EGSnrc test script.
+RUN test_distribution
+
+
+# Default to launching the run script.
+#WORKDIR /egsnrc/egs_home
+WORKDIR /working
+CMD ["/bin/bash", "/scratch/Run_Default_Simulation.sh"]
+
