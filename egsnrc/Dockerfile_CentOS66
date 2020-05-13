@@ -52,16 +52,26 @@ RUN mv xpra-xorg.conf /etc/X11/xorg.conf
 
 
 # Source and configure EGSnrc.
-WORKDIR /egsnrc
-RUN git clone --progress https://github.com/nrc-cnrc/EGSnrc.git . && \
+#
+# Note: the following seems to intermittently fail due to ld complaining about truncated object files during a binary
+# linking phase. Possibly mis-use of parallel building? Possibly incomplete git-clones? I'm not sure why this is
+# happening. One workaround seems to be to simply try building again until it works. :(
+RUN (rm -rf /egsnrc || true) && \
+    mkdir /egsnrc && \
+    cd /egsnrc && \
+    export HEN_HOUSE="" \
+           EGS_HOME="" \
+           EGS_CONFIG="" && \
+    git clone --progress https://github.com/nrc-cnrc/EGSnrc.git . && \
+    git checkout v2020 && \
     ./HEN_HOUSE/scripts/configure.expect linux.conf 1
-ENV EGS_HOME "/egsnrc/egs_home/"
-ENV EGS_CONFIG "/egsnrc/HEN_HOUSE/specs/linux.conf"
-#ENV HEN_HOUSE "/egsnrc/HEN_HOUSE/"
-RUN . /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions
-RUN printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /etc/profile
-RUN printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /etc/bash.bashrc
-RUN printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /root/.bashrc
+RUN export HEN_HOUSE="/egsnrc/HEN_HOUSE/" \
+           EGS_CONFIG="/egsnrc/HEN_HOUSE/specs/linux.conf" \
+           EGS_HOME="/egsnrc/egs_home/" && \
+    . /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions && \
+    printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /etc/profile     && \
+    printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /etc/bash.bashrc && \
+    printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /root/.bashrc
 
 
 # Build the GUI tools.
