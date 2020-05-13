@@ -77,6 +77,18 @@ RUN ln -s /usr/bin/qmake-qt4 /usr/bin/qmake
 RUN test_distribution || true
 
 
+# Install HTCondor.
+WORKDIR /htcondor
+RUN curl 'https://research.cs.wisc.edu/htcondor/yum/RPM-GPG-KEY-HTCondor' > RPM-GPG-KEY-HTCondor && \
+    rpm --import RPM-GPG-KEY-HTCondor && \
+    cd /etc/yum.repos.d/ && \
+    curl 'https://research.cs.wisc.edu/htcondor/yum/repo.d/htcondor-stable-rhel6.repo' > htcondor-stable-rhel6.repo && \
+    yum -y install condor 
+
+# Note: launch condor at runtime via:
+# $>  chkconfig condor on && service condor start
+
+
 # Default to launching the run script.
 #WORKDIR /egsnrc/egs_home
 WORKDIR /working

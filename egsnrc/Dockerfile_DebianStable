@@ -41,6 +41,8 @@ RUN apt-get install --yes \
         expect \
         imagej \
         kate \
+    ` # Misc.` \
+        htcondor \
     ` # Software X server that provides OpenGL extensions.` \
         x-window-system \
         mesa-utils \
