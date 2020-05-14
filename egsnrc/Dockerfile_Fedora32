@@ -1,0 +1,113 @@
+
+FROM fedora:32
+
+LABEL maintainer="http://www.halclark.ca" \
+      description="An EGSnrc appliance."
+
+#EXPOSE 80
+#EXPOSE 443
+
+WORKDIR /scratch
+ADD . /scratch
+
+
+# Install core build dependencies.
+RUN yum -y update && \
+    yum clean all && \
+    yum -y install \
+      git \
+      make \
+      cmake \
+      gcc \
+      gcc-c++ \
+      gcc-gfortran \
+      vim \
+      gdb \
+      rsync \
+      findutils
+
+# Install other dependencies.
+RUN yum -y install \
+    ` # EGSnrc dependencies. ` \
+        tcl \
+        tk \
+        qt5 \
+        qt5-devel \
+        at \
+        expect
+
+# Software X server that provides OpenGL extensions.
+#RUN dnf -y groupinstall "X Window system"
+RUN yum -y install \
+        xorg-x11-apps 
+#        xorg-x11-docs \
+#        xorg-x11-drivers \
+#        xorg-x11-font-utils \
+#        xorg-x11-fonts \
+#        xorg-x11-server \
+#        xorg-x11-server-utils \
+#        xorg-x11-util-macros \
+#        xorg-x11-xkb-utils \
+#        mesa
+
+
+# Needed for the software X server.
+RUN mv xpra-xorg.conf /etc/X11/xorg.conf
+
+
+# Source and configure EGSnrc.
+#
+# Note: the following seems to intermittently fail due to ld complaining about truncated object files during a binary
+# linking phase. Possibly mis-use of parallel building? Possibly incomplete git-clones? I'm not sure why this is
+# happening. One workaround seems to be to simply try building again until it works. :(
+RUN (rm -rf /egsnrc || true) && \
+    mkdir /egsnrc && \
+    cd /egsnrc && \
+    export HEN_HOUSE="" \
+           EGS_HOME="" \
+           EGS_CONFIG="" && \
+    git clone --progress --branch=master --depth=1 -b v2020 https://github.com/nrc-cnrc/EGSnrc.git . && \
+    ./HEN_HOUSE/scripts/configure.expect linux.conf 1 
+    FFLAGS='-std=f2008' ./HEN_HOUSE/scripts/configure.expect linux.conf 1 
+
+NOTE: The above line fails! It appears to be due to an incompatibility in mortran and pegs, though I can't say for sure...
+
+RUN export HEN_HOUSE="/egsnrc/HEN_HOUSE/" \
+           EGS_CONFIG="/egsnrc/HEN_HOUSE/specs/linux.conf" \
+           EGS_HOME="/egsnrc/egs_home/" && \
+    . /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions && \
+    printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /etc/profile     && \
+    printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /etc/bash.bashrc && \
+    printf '. /egsnrc/HEN_HOUSE/scripts/egsnrc_bashrc_additions\n' >> /root/.bashrc
+
+
+# Build the GUI tools.
+ENV QTDIR "/usr"
+RUN ln -s /usr/bin/qmake-qt4 /usr/bin/qmake
+## Note: The following fails due to 'Cannot find file: /egsnrc/HEN_HOUSE/gui/egs_configure/egs_configure.pro'
+##       Likely missing dependencies, but I'm not sure which.
+#RUN cd /egsnrc/HEN_HOUSE/gui/        && make -j $(nproc) --print-directory && \
+#    cd /egsnrc/HEN_HOUSE/egs++/view/ && make -j $(nproc) --print-directory
+
+
+# Run the EGSnrc test script.
+RUN test_distribution || true
+
+
+# Install HTCondor.
+WORKDIR /htcondor
+RUN curl 'https://research.cs.wisc.edu/htcondor/yum/RPM-GPG-KEY-HTCondor' > RPM-GPG-KEY-HTCondor && \
+    rpm --import RPM-GPG-KEY-HTCondor && \
+    cd /etc/yum.repos.d/ && \
+    curl 'https://research.cs.wisc.edu/htcondor/yum/repo.d/htcondor-stable-rhel6.repo' > htcondor-stable-rhel6.repo && \
+    yum -y install condor 
+
+# Note: launch condor at runtime via:
+# $>  chkconfig condor on && service condor start
+
+
+# Default to launching the run script.
+#WORKDIR /egsnrc/egs_home
+WORKDIR /working
+CMD ["/bin/bash", "/scratch/Run_Default_Simulation.sh"]
+
