@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script partially anonymizes a directory of DICOM files.
-# It anonymizes the core tags, but will be easily identified in most cases.
+# It anonymizes core tags, but the patient could be identified by a determined individual in most cases.
 # For example, private tags are retained.
 # All files in the directory are assumed to comprise a logical set.
 # All output files are assigned uniform series and study information.
