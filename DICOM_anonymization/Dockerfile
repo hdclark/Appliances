@@ -15,8 +15,8 @@ EXPOSE 22/tcp \
 
 WORKDIR /resources
 ADD . /resources
-ADD ./scripts/anonymize /usr/bin
-ADD ./scripts/anonymize_partial /usr/bin
+ADD ./internal/scripts/anonymize /usr/bin
+ADD ./internal/scripts/anonymize_partial /usr/bin
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -49,5 +49,5 @@ RUN apt-get --yes update && \
 
 
 WORKDIR /scratch
-CMD ["/bin/bash", "/resources/Run_Default.sh"]
+CMD ["/bin/bash", "/resources/internal/Run_Default.sh"]
 

@@ -36,9 +36,9 @@ dcmdump --version
 
 printf '\n'
 printf 'To anonymize you must invoke one of:\n'
-printf '  /resources/Run_anonymize.sh\n'
+printf '  /resources/internal/Run_anonymize.sh\n'
 printf 'or\n'
-printf '  /resources/Run_anonymize_partial.sh\n'
+printf '  /resources/internal/Run_anonymize_partial.sh\n'
 printf 'The top-level directories mapped to /artifacts/ will each be anonymized.\n'
 
 ## Clean up, if necessary (usually not).
