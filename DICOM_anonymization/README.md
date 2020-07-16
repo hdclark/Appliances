@@ -6,19 +6,17 @@ First, the `Docker` image needs to be built. This only needs to be done once.
 
     $>  ./build.sh
 
-
 Then, gather the data for a single patient into one directory ("to-anonymize/").
 
     $>  mkdir -p to-anonymize/
-
-    $>  cp 1.dcm 2.dcm 3.dcm
+    $>  cp 1.dcm 2.dcm 3.dcm ... to-anonymize/
 
 Finally, run the following helper script to launch the docker image.
 
-    $>  ./partial_anonymize_dir.sh to-anonymize/ anonymized/
+    $>  ./anonymize_dir.sh -a to-anonymize/ anonymized/
 
 You will be asked to supply necessary information. It is possible to supply this information on the command line.
 For more information see:
 
-    $>  ./partial_anonymize_dir.sh -h
+    $>  ./anonymize_dir.sh -h
 
