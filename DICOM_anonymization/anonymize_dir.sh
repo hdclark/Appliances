@@ -163,8 +163,8 @@ if [ -z "${SeriesDescProvided}" ] ; then
         printf "    Note: Leave empty to overwrite with an empty value.\n"
     else
         printf "    Note: Leave empty to retain existing description.\n"
+        printf "    Note: Setting this option will cause **all** descriptions to be overwritten with the same value.\n"
     fi
-    printf "    Note: Setting this option will cause all (possibly different) descriptions to be overwritten.\n"
     read SeriesDesc
     SeriesDescProvided="yes"
 fi
@@ -207,11 +207,11 @@ docker \
     -v "${anondir}":/output/:rw \
     dcm_anon:latest \
     "${InternalAnonScript}" \
-      -p '${PatientID}' \
-      -s '${StudyID}' \
-      -n '${PatientsName}' \
-      -t '${StudyDesc}' \
-      -e '${SeriesDesc}'
+      -p "${PatientID}" \
+      -s "${StudyID}" \
+      -n "${PatientsName}" \
+      -t "${StudyDesc}" \
+      -e "${SeriesDesc}"
 
 sudo \
 chown -R --reference="${thedir}" "${anondir}"
