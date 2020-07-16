@@ -26,7 +26,8 @@ PatientsNameProvided=""
 StudyDescProvided=""
 SeriesDescProvided=""
 
-thedir=""
+thedir="/input/"
+anondir="/output/"
 
 ###########################################################################################
 # Argument parsing
@@ -35,10 +36,21 @@ OPTIND=1 # Reset in case getopts has been used previously in the shell.
 while getopts "hp:s:n:t:e:" opt; do
     case "$opt" in
     h)
+        printf '\n'
+        printf '===============================================================================\n'
         printf 'This script anonymizes a directory of DICOM files.\n'
-        printf 'Providing any arguments will disable interactive polling for the parameter later.\n'
-        printf 'Note that any parameters not provided will result in interactive polling.\n'
-        printf "Usage: \n\t $0 -p 'patient_ID' -s 'study_id' -n 'patient_name' -t 'study_desc' -e 'series_desc' dicom_dir/\n\n"
+        printf 'All files will be assumed to belong to the same patient and will remain linked.\n'
+        printf '\n'
+        printf 'This script will fail if any arguments are not provided!\n'
+        printf '\n'
+        printf 'Usage: \n'
+        printf '\t '"$0"' \\\n'
+        printf '\t   -p "new_anonymous_patient_id" \\\n'
+        printf '\t   -n "new_anonymous_patient_name" \\\n'
+        printf '\t   -s "new_anonymous_study_id" \\\n'
+        printf '\t   -t "new_anonymous_study_desc" \\\n'
+        printf '\t   -e "new_anonymous_series_desc" \\\n\n'
+        printf '===============================================================================\n'
         exit 1
         ;;
     p)  PatientIDProvided="yes"
@@ -60,15 +72,20 @@ while getopts "hp:s:n:t:e:" opt; do
 done
 shift $(( OPTIND - 1 ))  # Purge all consumed options to the left of the first non-option token.
 
-thedir="$@"
-if [ ! -d "$thedir" ] ; then
-    printf 'Cannot access provided directory. Refusing to continue.\n' 1>&2
+mkdir -pv "${anondir}"/ 
+
+# Ensure we have necessary info.
+if [ -z "$PatientIDProvided" ] \
+|| [ -z "$StudyIDProvided" ] \
+|| [ -z "$PatientsNameProvided" ] \
+|| [ -z "$StudyDescProvided" ] \
+|| [ -z "$SeriesDescProvided" ] ; then
+    printf "This script currently requires all patient parameters to be specified. Refusing to continue.\n" 2>&1
+    # Note: All params needed to be supplied because I can't selectively pass arguments (see below).
+    #       Providing only some parameters would also make the script interactive, which this script isn't well suited
+    #       for.
     exit 1
 fi
-anondir="${thedir%/}_anon"
-mkdir -p "${anondir}"/ 
-printf -- "Anonymizing '${thedir}' to '$anondir' ...\n"
-
 
 # A simple routine to generate (toy) UIDs.
 genericUID() {
@@ -367,44 +384,12 @@ tagstomodify+=("(0040,A123)=Anonymous") #     Person Name
 #tagstomodify+=("(0032,1060)=Anonymous") #     Requested Procedure Description                                      
 tagstomodify+=("(300E,0008)=Anonymous") #     Reviewer Name
 
-printf "\n"
-printf "You may now be prompted for info to imbue the files with.\n"
-printf "\n"
 
-if [ -z "${PatientIDProvided}" ] ; then 
-    printf "Patient ID? (e.g., 'anon_1234')\n"
-    read -e -i "anon_$RANDOM$RANDOM" PatientID
-fi
 tagstomodify+=("(0010,0020)=${PatientID}") #     Patient ID                                                           
-
-if [ -z "${StudyIDProvided}" ] ; then 
-    printf "Study ID? (e.g., '1234')\n"
-    read -e -i "${RANDOM}0" StudyID
-fi
 tagstomodify+=("(0020,0010)=${StudyID}") #     Study ID                                                             
-
-if [ -z "${PatientsNameProvided}" ] ; then 
-    printf "Patient's name? (e.g., 'Anonymous^Anonymous')\n"
-    read -e -i "${PatientID}^${PatientID}" PatientsName
-fi
 tagstomodify+=("(0010,0010)=${PatientsName}") #     Patient's Name                                                       
-
-if [ -z "${StudyDescProvided}" ] ; then 
-    printf "Study description? (e.g., 'Research study for X.').\n"
-    printf "    Note: No quotes are needed.\n"
-    printf "    Note: Leave empty to leave existing tag(s) as-is.\n"
-    read StudyDesc
-fi
 if [ ! -z "${StudyDesc}" ] ; then
     tagstomodify+=("(0008,1030)=${StudyDesc}") #     Study Description                                                    
-fi
-
-if [ -z "${SeriesDescProvided}" ] ; then 
-    printf "Series description? (e.g., 'Research scan for Y.').\n"
-    printf "    Note: No quotes are needed.\n"
-    printf "    Note: Leave empty to leave existing tag(s) as-is.\n"
-    printf "    Note: Setting this option will cause all (possibly different) descriptions to be overwritten.\n"
-    read SeriesDesc
 fi
 if [ ! -z "${SeriesDesc}" ] ; then
     tagstomodify+=("(0008,103E)=${SeriesDesc}") #     Series Description                                                    
@@ -536,7 +521,7 @@ done
 #apasswd=$( openssl rand -base64 128 | head -c 64 )
 #gdcmanon -r --continue -p "${apasswd}" -V -i "${WORKDIR}" -o "${anondir}"/
 # OR, you can fallback (without any anonymization) to:
-rsync -avPLz "${WORKDIR}/" "${anondir}/"
+rsync -avPLzz "${WORKDIR}/" "${anondir}/"
 
 
 
