@@ -19,6 +19,7 @@ build_datetime=$(date '+%Y%m%_0d-%_0H%_0M%_0S')
 
 time sudo docker build \
     --no-cache=true \
+    --network=host \
     -t "${image_basename}":"built_${build_datetime}" \
     -t "${image_basename}":"commit_${commit_id}_${clean_dirty}" \
     -t "${image_basename}":latest \

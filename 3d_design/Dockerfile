@@ -1,6 +1,6 @@
 
 #FROM debian:unstable
-FROM archlinux/base
+FROM archlinux
 
 LABEL maintainer="http://www.halclark.ca" \
       description="Containerized tools for 3D design and printing."
@@ -24,25 +24,23 @@ RUN sed -i -e 's/^SigLevel[ \t]*=.*/SigLevel = TrustAll/g' /etc/pacman.conf && \
 
 
 # Create a temporary user for building AUR packages.
-RUN useradd -r -d /var/empty aurbuild  && \
+RUN useradd -r -d /var/empty builduser  && \
     mkdir -p /var/empty/ && \
-    chown -R aurbuild:aurbuild /var/empty/ && \
-    printf '\n''aurbuild ALL=(ALL) NOPASSWD: ALL''\n' >> /etc/sudoers
+    chown -R builduser:builduser /var/empty/ && \
+    printf '\n''builduser ALL=(ALL) NOPASSWD: ALL''\n' >> /etc/sudoers
 
 
-# Install an AUR helper.
+# Install an AUR helper unless one is already present.
 WORKDIR /yay
-RUN git clone https://aur.archlinux.org/yay-bin.git . && \
-    chown -R aurbuild:aurbuild . && \
-    su - aurbuild -c "cd /yay && makepkg --syncdeps --install --clean --needed --noconfirm --rmdeps" && \
-    rm -rf /yay
+RUN if ! command -v yay ; then git clone https://aur.archlinux.org/yay-bin.git . && \
+    chown -R builduser:builduser . && \
+    su - builduser -c "cd /yay && makepkg --syncdeps --install --clean --needed --noconfirm --rmdeps" && \
+    rm -rf /yay ; fi
 
+#RUN mkdir -p /var/empty/.config && chown builduser /var/empty/.config
 
 ## Install AUR packages.
-RUN mkdir -p /var/empty/.config && chown aurbuild /var/empty/.config
-
-
-RUN su - aurbuild -c "yay -S --noconfirm --needed --afterclean --aur meshlab-git freecad" && \
+RUN su - builduser -c "yay -S --noconfirm --needed --afterclean --aur meshlab-git freecad" && \
     rm -f /var/cache/pacman/pkg/*
 
 
