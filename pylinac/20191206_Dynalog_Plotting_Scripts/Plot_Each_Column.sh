@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 for dlgfile in *dlg ; do 
     tmpdir=$(mktemp -d /tmp/OK_to_delete_XXXXXXX)

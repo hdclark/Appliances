@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script is a convenience wrapper around the DICOM anonymization container. 
 # Given a directory 'A' containing files like:

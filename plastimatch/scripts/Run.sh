@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 
-#!/bin/bash
+#!/usr/bin/env bash
 
 k=9050
 j=Set_032     # <---- Figure out which phase you want by grepping for 'Series Description' and 'PN:??'.

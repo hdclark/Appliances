@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script provides a git-annex accessible via ssh that serves everything within a given root directory.
 

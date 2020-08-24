@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script will act like a simplistic init process inside the container, setting up the runtime environment and
 # launching necessary programs. It is invoked by default, but can be overridden when launching the container.

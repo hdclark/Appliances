@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Note: Must be run at the top-level root of the registration, which should look like this:
 #    

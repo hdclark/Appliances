@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Launch a software X server capable of emulating OpenGL.
 /usr/bin/Xorg \
