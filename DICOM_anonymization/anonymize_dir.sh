@@ -118,6 +118,7 @@ if [ ! -d "${thedir}" ] ; then
     printf 'Cannot access directory "%s". Refusing to continue.\n' "${thedir}" 1>&2
     exit 1
 fi
+printf 'Continuing with input directory "%s".\n' "${thedir}"
 
 anondir="$@"
 if [ -z "${anondir}" ] ; then
@@ -205,6 +206,7 @@ docker \
     -it --rm \
     -v "${thedir}":/input/:ro \
     -v "${anondir}":/output/:rw \
+    \
     dcm_anon:latest \
     "${InternalAnonScript}" \
       -p "${PatientID}" \
@@ -219,6 +221,12 @@ chown -R --reference="${thedir}" "${anondir}"
 exit
 exit
 exit
+
+    \
+    `# Enable access to host computer's kernel to support FUSE filesystems (=Windows cmpatibility).` \
+    -u $(id -u ${USER}):$(id -g ${USER}) \
+    --device /dev/fuse \
+    --privileged \
 
 lastdir="$( basename "${thedir}" )"
 anontopdir="/tmp/dcm_anonymize"         # On remote.
