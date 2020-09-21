@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script launches a plastimatch Docker container to apply a registration transformation to an RTDOSE file.
 #

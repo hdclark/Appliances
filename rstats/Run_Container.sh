@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 image_basename="rstats"
 
@@ -12,7 +12,9 @@ printf -- "${image_basename} container artifacts going to: ${artifacts_dir}\n" 1
 sudo docker run \
     -it \
     --rm \
+    -v "$(pwd)":/start/:rw \
     -v "${artifacts_dir}":/artifacts/:rw \
+    -w /start \
     "${image_basename}":latest \
     $@
 

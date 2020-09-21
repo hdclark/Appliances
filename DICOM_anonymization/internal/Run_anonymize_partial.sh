@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Run the anonymize_partial script on the mapped directory.
 #

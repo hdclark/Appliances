@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script launches a plastimatch Docker container to perform a rigid image registration.
 #
