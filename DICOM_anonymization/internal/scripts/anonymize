@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#set -x
+
 # This script anonymizes a directory of DICOM files.
 # It follows *most* of DICOM supplement 142 "Clinical Trial De-Identification."
 # It correctly handles all the 'potentially problematic' tags described in the study by Aryanto et al. 2015 (doi:10.1007/s00330-015-3794-0).
@@ -518,7 +520,7 @@ done
 #apasswd=$( openssl rand -base64 128 | head -c 64 )
 #gdcmanon -r --continue -p "${apasswd}" -V -i "${WORKDIR}" -o "${anondir}"/
 # OR, you can fallback (without any anonymization) to:
-rsync -avPLzz "${WORKDIR}/" "${anondir}/"
+rsync -rvPLzz "${WORKDIR}/" "${anondir}/"
 
 
 

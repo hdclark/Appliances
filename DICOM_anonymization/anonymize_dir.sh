@@ -61,7 +61,7 @@ while getopts "hup:s:n:t:e:a" opt; do
         printf '\t   -s "new_anonymous_study_id" \\\n'
         printf '\t   -t "new_anonymous_study_desc" \\\n'
         printf '\t   -e "new_anonymous_series_desc" \\\n'
-        printf '\t   "dir_with_dicom_artifacts_from_one_patient/"\n\n'
+        printf '\t   "dir_with_dicom_artifacts_from_one_patient/" \\\n'
         printf '\t   "output_dir/"\n'
         printf '\n'
         printf 'Note: \n'
@@ -115,7 +115,7 @@ while [ ! -d "${thedir}" ] ; do
 done
 thedir="${thedir%/}" # Strip any trailing '/' to avoid confusing rsync.
 if [ ! -d "${thedir}" ] ; then
-    printf 'Cannot access provided directory. Refusing to continue.\n' 1>&2
+    printf 'Cannot access directory "%s". Refusing to continue.\n' "${thedir}" 1>&2
     exit 1
 fi
 
@@ -247,6 +247,11 @@ ssh -tt "${userATremote}" "
       run \
         -it --rm \
         -v \"${anontopdir}\":/artifacts/:rw \
+        \
+        `# Enable access to host computer's kernel to support FUSE filesystems (=Windows cmpatibility).` \
+        --device /dev/fuse \
+        --privileged \
+        \
         dcm_anon:latest \
         /resources/internal/Run_anonymize_partial.sh \
           -p '${PatientID}' \

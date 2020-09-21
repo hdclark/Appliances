@@ -1,7 +1,7 @@
 
-#FROM debian:stable
+FROM debian:stable
 #FROM debian:testing
-FROM debian:unstable
+#FROM debian:unstable
 
 LABEL maintainer="http://www.halclark.ca" \
       description="Containerized DICOM anonymizer."
@@ -20,8 +20,8 @@ ADD ./internal/scripts/anonymize_partial /usr/bin
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get --yes update && \
-    apt-get --yes install \
+RUN apt-get --yes --allow-unauthenticated -o Acquire::AllowInsecureRepositories=true update && \
+    apt-get --yes --allow-unauthenticated -o Acquire::AllowInsecureRepositories=true install \
       `# ` \
       `# Core utilities. ` \
       vim \
@@ -45,7 +45,12 @@ RUN apt-get --yes update && \
       libdcmtk-dev \
       libodil0 \
       libodil0-dev \
-      libodil0-doc
+      libodil0-doc \
+      `# ` \
+      `# Extra filesystem support. ` \
+      ntfs-3g \
+      exfat-fuse \
+      exfat-utils
 
 
 WORKDIR /scratch
