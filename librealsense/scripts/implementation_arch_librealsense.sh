@@ -35,6 +35,32 @@ pacman -Syu --noconfirm --needed \
 rm -f /var/cache/pacman/pkg/*
 
 
+# Install frequently-used dependencies.
+pacman -S --noconfirm --needed  \
+  gcc-libs \
+  gsl \
+  eigen \
+  boost-libs \
+  gnu-free-fonts \
+  sfml \
+  zlib \
+  asio \
+  nlopt \
+  bash-completion \
+  patchelf \
+  freeglut \
+  libxi \
+  libxmu \
+  ` # Additional dependencies for headless OpenGL rendering with SFML ` \
+  xorg-server \
+  xorg-apps \
+  mesa \
+  xf86-video-dummy
+rm -f /var/cache/pacman/pkg/*
+
+cp /scratch_base/xpra-xorg.conf /etc/X11/xorg.conf
+
+
 # Create an unprivileged user for building packages.
 # 
 # Note: The 'archlinux' Docker container currently contains user 'aurbuild' and has yay installed already.
@@ -58,21 +84,6 @@ if ! command -v yay &>/dev/null ; then
     su - builduser -c "cd /tmp && ./yay -S --mflags --skipinteg --nopgpfetch --noconfirm yay-bin"
     rm -rf /tmp/yay
 fi
-
-
-# Install frequently-used dependencies.
-pacman -S --noconfirm --needed  \
-  gcc-libs \
-  gsl \
-  eigen \
-  boost-libs \
-  gnu-free-fonts \
-  zlib \
-  asio \
-  nlopt \
-  bash-completion \
-  patchelf 
-rm -f /var/cache/pacman/pkg/*
 
 
 # Download the librealsense library.
