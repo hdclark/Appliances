@@ -12,7 +12,7 @@ ADD . /resources
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get --yes update && \
-    apt-get --yes install \
+    apt-get --yes --no-install-recommends install \
       `# ` \
       `# Core utilities. ` \
       vim \
@@ -24,6 +24,12 @@ RUN apt-get --yes update && \
       cmake \
       screen \
       wget \
+      patch \
+      less \
+      zip \
+      bzip2 \
+      file \
+      xz-utils \
       `# ` \
       `# Image conversion support tooling ` \
       poppler-utils \
@@ -38,7 +44,7 @@ RUN apt-get --yes update && \
       `# ` \
       `# TeXlive stuff. ` \
       `# ` \
-      `# Note: The following package results in a massive (7+ GB) container. ` \
+      `# Note: The following package results in a massive container. ` \
       `#       Enable if something out of the ordinary is needed.` \
       `# texlive-full ` \
       texlive-latex-base \
@@ -51,29 +57,13 @@ RUN apt-get --yes update && \
       texlive-pstricks \
       texlive-pstricks-doc \
       texlive-fonts-extra \
-      `# ` \
-      `# Pandoc. ` \
-      pandoc \
-      pandoc-citeproc \
-      `# ` \
-      `# Asciidoc. ` \
-      asciidoc \
-      asciidoc-dblatex \
-      vim-asciidoc \
-      `# ` \
-      `# Some suggested packages for Pandoc/Asciidoc. ` \
-      source-highlight \
-      dot2tex \
-      `# ` \
-      `# Libreoffice and related. ` \
-      `# Note: these pull in lots of dependencies (e.g., apparmor, openjdk, mesa, ...). ` \
-      `#    libreoffice ` \
-      `#    unoconv ` \
+      texlive-font-utils \
+      texlive-extra-utils `# <-- includes pdfjam ` \
       `# ` \
       `# Misc TeX-related tooling. ` \
       vim-latexsuite \
       texify \
-      texvc \
+      `# texvc ` \
       tralics \
       tth \
       ttm \
@@ -96,10 +86,46 @@ RUN apt-get --yes update && \
       latexdiff \
       latexml \
       `# ` \
+      `# Markdown, Pandoc, Asciidoc, etc. ` \
+      pandoc \
+      pandoc-citeproc \
+      cmark-gfm \
+      grip \
+      markdown \
+      mkdocs \
+      mkdocs-doc \
+      python3-pandocfilters \
+      asciidoc \
+      asciidoc-dblatex \
+      vim-asciidoc \
+      source-highlight \
+      dot2tex \
+      `# ` \
+      `# Libreoffice and related. ` \
+      `# Note: these pull in lots of dependencies (e.g., apparmor, openjdk, mesa, ...). ` \
+      `# libreoffice ` \
+      `# unoconv ` \
+      `# ` \
       `# Misc. ` \
+      pdftk \
+      ps2eps \
+      dvisvgm \
+      fonts-liberation \
       fontconfig \
       fonts-noto \
-      lmodern
+      fonts-noto-color-emoji \
+      fonts-noto-extra \
+      fonts-noto-mono \
+      fonts-noto-ui-core \
+      fonts-noto-ui-extra \
+      fonts-noto-unhinted \
+      lmodern \
+      fonts-dejavu-core \
+      fonts-dejavu-extra \
+      hunspell \
+      hunspell-en-ca \
+      xlsx2csv \
+      binfmt-support
 
 # Install Firefox Fire fonts for Beamer's Metropolis theme.
 WORKDIR /extras
