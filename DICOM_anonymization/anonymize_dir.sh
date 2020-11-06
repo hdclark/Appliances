@@ -56,11 +56,12 @@ while getopts "hup:s:n:t:e:a" opt; do
         printf '\n'
         printf 'Usage: \n'
         printf '\t '"$0"' \\\n'
-        printf '\t   -p "new_anonymous_patient_id" \\\n'
-        printf '\t   -n "new_anonymous_patient_name" \\\n'
-        printf '\t   -s "new_anonymous_study_id" \\\n'
-        printf '\t   -t "new_anonymous_study_desc" \\\n'
-        printf '\t   -e "new_anonymous_series_desc" \\\n'
+        printf '\t   -p "new_anonymous_patient_id"    `# Optional; will be queried if missing.` \\\n'
+        printf '\t   -n "new_anonymous_patient_name"  `# Optional; will be queried if missing.` \\\n'
+        printf '\t   -s "new_anonymous_study_id"      `# Optional; will be queried if missing.` \\\n'
+        printf '\t   -t "new_anonymous_study_desc"    `# Optional; will be queried if missing.` \\\n'
+        printf '\t   -e "new_anonymous_series_desc"   `# Optional; will be queried if missing.` \\\n'
+        printf '\t   -a                               `# Optional; use partial anonymization.` \\\n'
         printf '\t   "dir_with_dicom_artifacts_from_one_patient/" \\\n'
         printf '\t   "output_dir/"\n'
         printf '\n'
@@ -113,7 +114,8 @@ while [ ! -d "${thedir}" ] ; do
         break
     fi
 done
-thedir="${thedir%/}" # Strip any trailing '/' to avoid confusing rsync.
+thedir="${thedir%/}" # Strip any trailing '/' to avoid confusing rsync or Docker.
+thedir="$(realpath -m "${thedir}")" # Resolve full path.
 if [ ! -d "${thedir}" ] ; then
     printf 'Cannot access directory "%s". Refusing to continue.\n' "${thedir}" 1>&2
     exit 1
@@ -121,6 +123,7 @@ fi
 printf 'Continuing with input directory "%s".\n' "${thedir}"
 
 anondir="$@"
+anondir="${anondir%/}" # Strip any trailing '/' to avoid confusing rsync or Docker.
 if [ -z "${anondir}" ] ; then
     printf "No output directory provided. Cannot continue\n" 2>&1
     exit 1
@@ -190,6 +193,7 @@ if [ -z "$PatientIDProvided" ] \
 fi
 
 # Ensure the output directory exists and is accessible.
+anondir="$(realpath -m "${anondir}")" # Resolve full path.
 mkdir -pv "${anondir}"
 if [ ! -d "${anondir}" ] ; then
     printf "Output directory not accessible. Cannot continue\n" 2>&1
@@ -217,62 +221,4 @@ docker \
 
 sudo \
 chown -R --reference="${thedir}" "${anondir}"
-
-exit
-exit
-exit
-
-    \
-    `# Enable access to host computer's kernel to support FUSE filesystems (=Windows cmpatibility).` \
-    -u $(id -u ${USER}):$(id -g ${USER}) \
-    --device /dev/fuse \
-    --privileged \
-
-lastdir="$( basename "${thedir}" )"
-anontopdir="/tmp/dcm_anonymize"         # On remote.
-anondir="${anontopdir}/in"              # On remote.
-outdir="${thedir}/../${lastdir}_anon"   # On localhost.
-
-if [ -d "${outdir}" ] ; then
-    printf "Destination directory '${outdir}' exists. Refusing to continue.\n" 2>&1
-    exit 1
-fi
-
-printf "Transferring files now...\n"
-ssh -tt "${userATremote}" "
-    sudo rm -rf \"${anontopdir}\"
-    mkdir -p \"${anontopdir}\"
-"
-
-rsync -azzP --compress-level=9 --delete "${thedir}/" "${userATremote}":"${anondir}/"
-
-printf "Launching anonymization now...\n"
-ssh -tt "${userATremote}" "
-    cd \"${anontopdir}\" &&
-    time \
-    sudo \
-    docker \
-      run \
-        -it --rm \
-        -v \"${anontopdir}\":/artifacts/:rw \
-        \
-        `# Enable access to host computer's kernel to support FUSE filesystems (=Windows cmpatibility).` \
-        --device /dev/fuse \
-        --privileged \
-        \
-        dcm_anon:latest \
-        /resources/internal/Run_anonymize_partial.sh \
-          -p '${PatientID}' \
-          -s '${StudyID}' \
-          -n '${PatientsName}' \
-          -t '${StudyDesc}' \
-          -e '${SeriesDesc}'
-"
-
-printf "Transferring files back now...\n"
-rsync -rvPzz --compress-level=9 --size-only --inplace "${userATremote}":"${anontopdir}/in_anon/" "${outdir}/" 
-
-ssh -tt "${userATremote}" "
-    sudo rm -rf \"${anontopdir}\"
-"
 
