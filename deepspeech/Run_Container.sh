@@ -9,6 +9,7 @@ sudo docker run \
     --rm \
     -v "$(pwd)":/scratch/:rw \
     -w /scratch/ \
+    -u $(id -u ${USER}):$(id -g ${USER}) \
     "${image_basename}":latest \
     $@
 

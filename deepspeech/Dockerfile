@@ -49,5 +49,5 @@ RUN wget https://github.com/mozilla/DeepSpeech/releases/download/v0.9.1/deepspee
 
 
 WORKDIR /scratch
-CMD ["/bin/bash", "/resources/Run_Default.sh"]
+CMD ["/bin/bash", "/resources/internal/Run_Default.sh"]
 
