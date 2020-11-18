@@ -7,8 +7,8 @@ set -e
 sudo docker run \
     -it \
     --rm \
-    -v "$(pwd)":/scratch/:rw \
-    -w /scratch/ \
+    -v "$(pwd)":"$(pwd)":rw \
+    -w "$(pwd)" \
     "${image_basename}":latest \
     $@
 

@@ -73,7 +73,7 @@ RUN apt-get --yes update && \
       `# Misc TeX-related tooling. ` \
       vim-latexsuite \
       texify \
-      texvc \
+      `# texvc ` \
       tralics \
       tth \
       ttm \
