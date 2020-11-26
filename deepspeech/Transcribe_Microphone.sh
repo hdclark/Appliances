@@ -26,8 +26,10 @@ script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}" )" )"
 
   # Debugging...
   text="$( cat "${tmpdir}/"*txt )"
+  printf '\n%s\n' "${text}"
 
-  printf '%s ' "${text}"
+  # Note: the following can be jarring if you're not expecting it. Uncommment to enable injecting the transcription into
+  # virtual keyboard presses.
   #xdotool type "${text}"
 )
 
