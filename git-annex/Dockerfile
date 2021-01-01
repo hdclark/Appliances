@@ -47,12 +47,12 @@ RUN ( groupadd --gid 1000 --non-unique users 2>/dev/null || \
 
 # Configure ssh connections.
 RUN mkdir -p /home/hal/.ssh/sockets && \
-    cat " \
-    Host * \
-        ControlMaster auto \
-        ControlPath ~/.ssh/sockets/%r@%h-%p \
-        ControlPersist 4h \
-    " > /home/hal/.ssh/config && \
+    ( printf '\n\n' ; \
+      printf '%s\n' 'Host *' ; \
+      printf '%s\n' '    ControlMaster auto' ; \
+      printf '%s\n' '    ControlPath ~/.ssh/sockets/%r@%h-%p' ; \
+      printf '%s\n' '    ControlPersist 4h' ; \
+      printf '\n\n' ) > /home/hal/.ssh/config && \
     chown --recursive hal:users /home/hal/.ssh
 
 WORKDIR /scratch
