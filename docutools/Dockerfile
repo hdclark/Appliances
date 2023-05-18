@@ -97,7 +97,6 @@ RUN apt-get --yes update && \
       python3-pandocfilters \
       asciidoc \
       asciidoc-dblatex \
-      vim-asciidoc \
       source-highlight \
       dot2tex \
       `# ` \
