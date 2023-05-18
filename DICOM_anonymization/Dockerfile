@@ -1,5 +1,6 @@
 
-FROM debian:stable
+FROM debian:oldstable
+#FROM debian:stable
 #FROM debian:testing
 #FROM debian:unstable
 
@@ -50,7 +51,9 @@ RUN apt-get --yes --allow-unauthenticated -o Acquire::AllowInsecureRepositories=
       `# Extra filesystem support. ` \
       ntfs-3g \
       exfat-fuse \
-      exfat-utils
+      exfat-utils && \
+    apt-get autoclean && \
+    apt-get clean
 
 
 WORKDIR /scratch

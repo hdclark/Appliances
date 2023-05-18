@@ -132,19 +132,22 @@ fi
 # Poll for missing info.
 if [ -z "${PatientIDProvided}" ] ; then 
     printf "Patient ID? (e.g., 'anon_1234')\n"
-    read -t 300 -e -i "anon_$RANDOM$RANDOM" PatientID || true
+    candidate="anon_$RANDOM$RANDOM"
+    read -t 300 -e -i "${candidate}" PatientID || PatientID="${candidate}"
     PatientIDProvided="yes"
 fi
 
 if [ -z "${StudyIDProvided}" ] ; then 
     printf "Study ID? (e.g., '1234')\n"
-    read -t 300 -e -i "${RANDOM}0" StudyID || true
+    candidate="${RANDOM}0"
+    read -t 300 -e -i "${candidate}" StudyID || StudyID="${candidate}"
     StudyIDProvided="yes"
 fi
 
 if [ -z "${PatientsNameProvided}" ] ; then 
     printf "Patient's name? (e.g., 'Anonymous^Anonymous')\n"
-    read -t 300 -e -i "${PatientID}^${PatientID}" PatientsName || true
+    candidate="${PatientID}^${PatientID}"
+    read -t 300 -e -i "${candidate}" PatientsName || PatientsName="${candidate}"
     PatientsNameProvided="yes"
 fi
 
@@ -156,8 +159,12 @@ if [ -z "${StudyDescProvided}" ] ; then
     else
         printf "    Note: Leave empty to retain existing description.\n"
     fi
-    read -t 300 StudyDesc || true
-    StudyDescProvided="yes"
+    if  read -t 300 StudyDesc  ; then 
+        StudyDescProvided="yes"
+    else
+        StudyDesc=""
+        StudyDescProvided=""
+    fi
 fi
 
 if [ -z "${SeriesDescProvided}" ] ; then 
@@ -169,8 +176,12 @@ if [ -z "${SeriesDescProvided}" ] ; then
         printf "    Note: Leave empty to retain existing description.\n"
         printf "    Note: Setting this option will cause **all** descriptions to be overwritten with the same value.\n"
     fi
-    read -t 300 SeriesDesc || true
-    SeriesDescProvided="yes"
+    if  read -t 300 SeriesDesc  ; then
+        SeriesDescProvided="yes"
+    else
+        SeriesDesc=""
+        SeriesDescProvided=""
+    fi
 fi
 
 if [ "${AnonLevel}" == "full" ] ; then
@@ -182,13 +193,8 @@ fi
 # Ensure we have necessary info.
 if [ -z "$PatientIDProvided" ] \
 || [ -z "$StudyIDProvided" ] \
-|| [ -z "$PatientsNameProvided" ] \
-|| [ -z "$StudyDescProvided" ] \
-|| [ -z "$SeriesDescProvided" ] ; then
-    printf "This script currently requires all patient parameters to be specified. Refusing to continue.\n" 2>&1
-    # Note: All params needed to be supplied because I can't selectively pass arguments (see below).
-    #       Providing only some parameters would also make the script interactive, which this script isn't well suited
-    #       for.
+|| [ -z "$PatientsNameProvided" ] ; then
+    printf "This script currently requires all name and ID parameters to be specified. Refusing to continue.\n" 2>&1
     exit 1
 fi
 
@@ -201,6 +207,7 @@ if [ ! -d "${anondir}" ] ; then
 fi
 #printf -- "Anonymizing '${thedir}' to '${anondir}' ...\n"
 
+set -x
 
 # Perform the anonymization.
 #time \
@@ -216,8 +223,8 @@ docker \
       -p "${PatientID}" \
       -s "${StudyID}" \
       -n "${PatientsName}" \
-      -t "${StudyDesc}" \
-      -e "${SeriesDesc}"
+      ` [ ! -z "${StudyDescProvided}" ]  && printf -- ' -t "%s"' "${StudyDesc}" ` \
+      ` [ ! -z "${SeriesDescProvided}" ] && printf -- ' -e "%s"' "${SeriesDesc}" ` 
 
 sudo \
 chown -R --reference="${thedir}" "${anondir}"

@@ -43,7 +43,8 @@ while getopts "hp:s:n:t:e:" opt; do
         printf 'This script anonymizes a directory of DICOM files.\n'
         printf 'All files will be assumed to belong to the same patient and will remain linked.\n'
         printf '\n'
-        printf 'This script will fail if any arguments are not provided!\n'
+        printf 'This script will fail if any ID or name arguments are not provided.\n'
+        printf 'Not providing study description or series description are OK.\n'
         printf '\n'
         printf 'Usage: \n'
         printf '\t '"$0"' \\\n'
@@ -79,9 +80,7 @@ mkdir -pv "${anondir}"/
 # Ensure we have necessary info.
 if [ -z "$PatientIDProvided" ] \
 || [ -z "$StudyIDProvided" ] \
-|| [ -z "$PatientsNameProvided" ] \
-|| [ -z "$StudyDescProvided" ] \
-|| [ -z "$SeriesDescProvided" ] ; then
+|| [ -z "$PatientsNameProvided" ] ; then
     printf "This script currently requires all patient parameters to be specified. Refusing to continue.\n" 2>&1
     # Note: All params needed to be supplied because I can't selectively pass arguments (see below).
     #       Providing only some parameters would also make the script interactive, which this script isn't well suited
@@ -157,8 +156,12 @@ tagstoerase+=("(0008,0092)") #     Referring Physician's Address
 tagstoerase+=("(0008,0094)") #     Referring Physician's Telephone Numbers                              
 tagstoerase+=("(0008,0096)") #     Referring Physician's Identification Sequence                        
 #tagstoerase+=("(0008,0201)") #     Timezone Offset From UTC
-#tagstoerase+=("(0008,1030)") #     Study Description                                                    
-#tagstoerase+=("(0008,103E)") #     Series Description                                              
+#if [ ! -z "$StudyDescProvided" ] ; then
+#    tagstoerase+=("(0008,1030)") #     Study Description                                                    
+#fi
+#if [ ! -z "$SeriesDescProvided" ] ; then
+#    tagstoerase+=("(0008,103E)") #     Series Description
+#fi
 #tagstoerase+=("(0008,1040)") #     Institutional Department Name                                        
 tagstoerase+=("(0008,1048)") #     Physician(s) of Record                                               
 tagstoerase+=("(0008,1049)") #     Physician(s) of Record Identification Sequence                       
@@ -395,12 +398,12 @@ tagstomodify+=("(300E,0008)=Anonymous") #     Reviewer Name
 tagstomodify+=("(0010,0020)=${PatientID}") #     Patient ID                                                           
 tagstomodify+=("(0020,0010)=${StudyID}") #     Study ID                                                             
 tagstomodify+=("(0010,0010)=${PatientsName}") #     Patient's Name                                                       
-if [ ! -z "${StudyDesc}" ] ; then
+if [ ! -z "$StudyDescProvided" ] ; then
     tagstomodify+=("(0008,1030)=${StudyDesc}") #     Study Description                                                    
 fi
-if [ ! -z "${SeriesDesc}" ] ; then
+if [ ! -z "$SeriesDescProvided" ] ; then
     tagstomodify+=("(0008,103E)=${SeriesDesc}") #     Series Description                                                    
-fi       
+fi
 
 
 #tagstomodify+=("(0008,0020)=${todaysdate}") #     Study Date                                                           
