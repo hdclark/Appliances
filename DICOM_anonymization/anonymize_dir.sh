@@ -132,19 +132,19 @@ fi
 # Poll for missing info.
 if [ -z "${PatientIDProvided}" ] ; then 
     printf "Patient ID? (e.g., 'anon_1234')\n"
-    read -e -i "anon_$RANDOM$RANDOM" PatientID
+    read -t 300 -e -i "anon_$RANDOM$RANDOM" PatientID || true
     PatientIDProvided="yes"
 fi
 
 if [ -z "${StudyIDProvided}" ] ; then 
     printf "Study ID? (e.g., '1234')\n"
-    read -e -i "${RANDOM}0" StudyID
+    read -t 300 -e -i "${RANDOM}0" StudyID || true
     StudyIDProvided="yes"
 fi
 
 if [ -z "${PatientsNameProvided}" ] ; then 
     printf "Patient's name? (e.g., 'Anonymous^Anonymous')\n"
-    read -e -i "${PatientID}^${PatientID}" PatientsName
+    read -t 300 -e -i "${PatientID}^${PatientID}" PatientsName || true
     PatientsNameProvided="yes"
 fi
 
@@ -156,7 +156,7 @@ if [ -z "${StudyDescProvided}" ] ; then
     else
         printf "    Note: Leave empty to retain existing description.\n"
     fi
-    read StudyDesc
+    read -t 300 StudyDesc || true
     StudyDescProvided="yes"
 fi
 
@@ -169,7 +169,7 @@ if [ -z "${SeriesDescProvided}" ] ; then
         printf "    Note: Leave empty to retain existing description.\n"
         printf "    Note: Setting this option will cause **all** descriptions to be overwritten with the same value.\n"
     fi
-    read SeriesDesc
+    read -t 300 SeriesDesc || true
     SeriesDescProvided="yes"
 fi
 
